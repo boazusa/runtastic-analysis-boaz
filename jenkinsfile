@@ -8,7 +8,7 @@ pipeline {
     }
     stage('hello') {
       steps {
-        read_runtastic_json.py
+        python3 read_runtastic_json.py
       }
     }
   }
