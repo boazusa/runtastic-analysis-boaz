@@ -3,12 +3,12 @@ pipeline {
   stages {
     stage('version') {
       steps {
-        echo "AAA"
+        sh. "python3 --version"
       }
     }
     stage('hello') {
       steps {
-        echo "BBB"
+        sh. "python3 read_runtastic_json.py"
       }
     }
   }
