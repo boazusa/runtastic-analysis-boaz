@@ -3,12 +3,12 @@ pipeline {
   stages {
     stage('version') {
       steps {
-        python --version
+        sh 'python --version'
       }
     }
     stage('hello') {
       steps {
-        python read_runtastic_json.py
+        sh 'python read_runtastic_json.py'
       }
     }
   }
