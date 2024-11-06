@@ -1,1 +1,1 @@
-python read_runtastic_json.py
+python.exe read_runtastic_json.py
