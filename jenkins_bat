@@ -1,9 +1,12 @@
 pipeline {
   agent any
+environment {
+    PATH = "C:/Users/USER/Documents/Python/Runtastic_Read_Json/venv/Scripts/python.exe;$PATH"
+}
   stages {
     stage('run_script') {
       steps {
-        bat dummy_echo.bat
+        bat jenkins_bat.bat
       }
     }
   }
