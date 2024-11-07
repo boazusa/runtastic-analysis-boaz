@@ -1,0 +1,23 @@
+pipeline {
+  agent any
+environment {
+    PATH = "C:/Users/USER/Documents/Python/Runtastic_Read_Json/venv/Scripts/python.exe;$PATH"
+}
+  stages {
+    stage('t 1') {
+      steps {
+        echo "AAA"
+      }
+    }
+    stage('t 2') {
+      steps {
+        echo "BBB"
+      }
+    }
+    stage('t 3') {
+      steps {
+        echo "CCC"
+      }
+    }
+  }
+}
