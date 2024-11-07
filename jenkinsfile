@@ -1,5 +1,8 @@
 pipeline {
   agent any
+environment {
+    PATH = "C:/path/to/dir/containing/python.exe;$PATH"
+}
   stages {
     stage('run_script') {
       steps {
