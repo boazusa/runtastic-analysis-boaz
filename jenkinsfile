@@ -1,14 +1,14 @@
 pipeline {
   agent any
   stages {
+    stage('run_script') {
+      steps {
+        sh 'python read_runtastic_json.py'
+      }
+    }
     stage('version') {
       steps {
         sh 'python --version'
-      }
-    }
-    stage('hello') {
-      steps {
-        sh 'python read_runtastic_json.py'
       }
     }
   }
