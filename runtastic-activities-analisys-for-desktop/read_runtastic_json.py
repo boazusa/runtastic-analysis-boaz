@@ -1,13 +1,24 @@
 import json
 from time import strftime, localtime
-from math import floor
+from math import floor, isnan
 import os
 from os import listdir
 from os.path import isfile, join, isdir
 import pandas as pd
 import datetime
+from read_single_runtastic_json import read_runtastic_json
 
-DEBUG = 0
+"""
+Debug mode:
+1 - Print json files names
+2 - Print json files summary
+3 - total measurements summary (same as __str__)
+4 - Print parsed data dictionary data(export_dict)
+5 - Print DataFrame from generated from dictionary data [(]pd.DataFrame(self.export_dict, columns=self.excel_columns)]
+6 - Print yearly summary (total distance, duration, average speed & pace, fastest 10Km, 21.1Km, 42.2Km activities)
+7 - Print yearly summary parsed data dictionary data (yearly_top_scores))
+"""
+DEBUG = 6
 
 # PATH = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script"
 # PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20240426-000\Sport-sessions\\'  # _output_path
@@ -66,6 +77,28 @@ class Runtastic_Data_To_Csv:
         for element in self.excel_columns:
             self.export_dict[element] = []
         #
+        self.year = "0"
+        self.yearly_running_distance = 0
+        self.yearly_running_duration = 0
+        self.yearly_running_duration_decimal = 0
+        self.average_speed_Km_h = 0
+        self.average_pace_min_Km = 0
+        self.fastest_10Km_1 = 0
+        self.fastest_10Km_2 = 0
+        self.fastest_10Km_3 = 0
+        self.Longest_run_1 = 0
+        self.Longest_run_2 = 0
+        self.Longest_run_3 = 0
+        self.Best_21_1 = 0
+        self.fastest_pace = 0
+        self.fastest_speed = 0
+        self.yearly_top_scores = {}
+        self.yearly_top_scores_columns = ["year", "yearly running distance", "yearly running duration",
+                                          "average speed [Km/h]" , "average pace [min/Km]",
+                                          "fastest 10Km 1", "fastest 10Km 2", "fastest 10Km 3",
+                                          "Longest run 1", "Longest run 2", "Longest run 3", "Best 21.1"]
+        for element in self.yearly_top_scores_columns:
+            self.yearly_top_scores[element] = []
         #
         # with open(self.json_file, 'r', encoding="utf8") as json_data:
         #     self.json_data_content = json.load(json_data)
@@ -107,7 +140,7 @@ class Runtastic_Data_To_Csv:
         self.duration_decimal = '%.2f' % (self.json_data_content["duration"] / 60000)
         duration_h = int(floor(self.json_data_content["duration"] / 60000) / 60)
         duration_min = floor(self.json_data_content["duration"] / 60000) % 60
-        duration_sec = '%.0f' % (
+        duration_sec = floor(
                 (self.json_data_content["duration"] / 60000 - floor(self.json_data_content["duration"] / 60000)) * 60)
         self.duration = f"{duration_h:0>2}:{duration_min:0>2}:{duration_sec:0>2}"
         self.calories = f'{self.json_data_content["calories"]}'
@@ -117,7 +150,7 @@ class Runtastic_Data_To_Csv:
             if "type" in dicts and "initial_values" in dicts['type']:
                 duration_h = int(floor(dicts["attributes"]["duration"] / 60000) / 60)
                 duration_min = floor(dicts["attributes"]["duration"] / 60000) % 60
-                duration_sec = '%.0f' % (
+                duration_sec = floor(
                         (dicts["attributes"]["duration"] / 60000 - floor(dicts["attributes"]["duration"] / 60000)) * 60)
                 self.duration_2 = f"{duration_h:0>2}:{duration_min:0>2}:{duration_sec:0>2}"
                 if "distance" in dicts["attributes"]:
@@ -202,11 +235,11 @@ class Runtastic_Data_To_Csv:
                 self.fastest_segments()
                 self.append_data_to_dict()
                 #
-                if DEBUG == 2:
+                if DEBUG == 1:
                     print("*" * 30 + f"{file: ^73}" + 30 * "*")
-                if DEBUG > 1:
-                    print(self.print_data())
-        if DEBUG == 1:
+                if DEBUG == 2:
+                    print(self.print_data(file))
+        if DEBUG == 3:
             distance_float = [float(x) for x in self.export_dict['distance']]
             duration_decimal = [float(y) for y in self.export_dict['duration_decimal']]
             print(f"Total distance: \t\t{'%.2f' % (sum(distance_float)):>5}")
@@ -221,23 +254,26 @@ class Runtastic_Data_To_Csv:
             minutes = int(ave_speed_dec)
             seconds = '%2.0f' % ((ave_speed_dec % minutes) * 60)
             print(f"Total average speed:\t{minutes :>2}:{seconds :0>2}")
+            print(f"\n{'  Fastest runs:  ':*^45}")
             fastest_max_10km_time = decimal_to_time(self.fastest_max_10km)
             print(f"Fastest 10Km:\t\t\t{fastest_max_10km_time} @ {self.fastest_10km_date}")
             fastest_max_21_1km_time = decimal_to_time(self.fastest_max_21_1km)
             print(f"Fastest 21.1Km:\t\t\t{fastest_max_21_1km_time} @ {self.fastest_21_1km_date}")
             fastest_max_42_2km_time = decimal_to_time(self.fastest_max_42_2km)
             print(f"Fastest 42.2Km:\t\t\t{fastest_max_42_2km_time} @ {self.fastest_42_2km_date}")
+            print(f"{'':*^45}\n")
 
-        if DEBUG > 2:
+        if DEBUG == 4:
             for key, data in self.export_dict.items():
                 print(key, data, len(data))
         df = pd.DataFrame(self.export_dict, columns=self.excel_columns)
-        if DEBUG > 3:
+        if DEBUG == 5:
             print(df)
 
-    def print_data(self):
+    def print_data(self, _file_name):
         if self.sport_type_id == "1":
-            return "start_time\t\t" + self.start_time \
+            return "*" * 30 + f"{_file_name: ^73}" + 30 * "*" \
+                   + "\nstart_time\t\t" + self.start_time \
                    + "\nend_time\t\t" + self.end_time \
                    + "\nduration\t\t" + self.duration \
                    + "\ncalories\t\t" + self.calories \
@@ -255,11 +291,14 @@ class Runtastic_Data_To_Csv:
         else:
             return "Not a running activity"
 
+    def create_dataframe_form_list(self):
+        self.df = pd.DataFrame(self.export_dict, columns=self.excel_columns)
+
     def export_to_csv(self):
         now = datetime.datetime.now()
         self.date_for_file = now.strftime('%Y-%m-%d_T_%H_%M_%S')
-        df = pd.DataFrame(self.export_dict, columns=self.excel_columns)
-        df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv', index=False, header=True)
+        self.df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv',
+                       index=False, header=True)
         # print("=====", self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv')
         print("Number of 'running' files =", f'{self.num_of_running_files:^18}')
         print("Generated Runtastic CSV path:\t", self.output_path[:-1] + self.date_for_folder +
@@ -277,42 +316,173 @@ class Runtastic_Data_To_Csv:
         print(now.strftime('%Y-%m-%d_@_%H:%M:%S'), 'CSV is ready')
         print(120 * '-')
 
-    def execute(self):
+    def execute(self, mode=0):
         self.start_time_message()
         self.create_output_folder()
         self.get_data()
-        self.export_to_csv()
+        self.create_dataframe_form_list()
+        if mode == 0:
+            self.get_year_distance()
+            self.export_to_csv()
+        elif mode == 1:
+            self.export_to_csv()
+        else:
+            self.get_year_distance()
         self.end_time_message()
+
+    def append_data_to_yearly_top_scores_dict(self):
+        self.yearly_top_scores["year"].append(self.year)
+        self.yearly_top_scores["yearly running distance"].append(self.yearly_running_distance)
+        self.yearly_top_scores["yearly running duration"].append(self.yearly_running_duration)
+        self.yearly_top_scores["average speed [Km/h]"].append(self.average_speed_Km_h + ' Km/h')
+        self.yearly_top_scores["average pace [min/Km]"].append(self.average_pace_min_Km + ' min/Km')
+        self.yearly_top_scores["fastest 10Km 1"].append(self.fastest_10Km_1 + ' min')
+        self.yearly_top_scores["fastest 10Km 2"].append(self.fastest_10Km_2 + ' min')
+        self.yearly_top_scores["fastest 10Km 3"].append(self.fastest_10Km_3 + ' min')
+        self.yearly_top_scores["Longest run 1"].append(self.Longest_run_1 + ' Km')
+        self.yearly_top_scores["Longest run 2"].append(self.Longest_run_2 + ' Km')
+        self.yearly_top_scores["Longest run 3"].append(self.Longest_run_3 + ' Km')
+        self.yearly_top_scores["Best 21.1"].append(self.Best_21_1 + ' m')
+
+    def get_year_distance(self):
+        current_year = "2014"
+        now = datetime.datetime.now().strftime('%Y')
+        while int(current_year) <= int(now):
+            year_distance = self.df[self.df["start_time"].str.contains(current_year)][["distance"]].astype(float)
+            # year_best_10k_top_3 = self.df[(self.df["start_time"].str.contains(current_year)) &
+            #                               (self.df["distance"].astype(float) > 10)][
+            #     ["duration_decimal"]].astype(float)["duration_decimal"].nsmallest(3)
+            year_best_10k_top_3 = self.df[(self.df["start_time"].str.contains(current_year)) &
+                                          (self.df["distance"].astype(float) > 10)]
+            year_best_10k_top_3 = year_best_10k_top_3[["duration_decimal"]].astype(float)["duration_decimal"]
+            year_best_10k_top_3 = year_best_10k_top_3.nsmallest(3)
+            year_best_10k_top_3_list = list(year_best_10k_top_3.reset_index()['duration_decimal'])
+            temp = len(year_best_10k_top_3_list)
+            for i in range(3 - temp):
+                year_best_10k_top_3_list.append(0)
+            year_best_21_1 = self.df[(self.df["start_time"].str.contains(current_year)) &
+                                     (self.df["distance"].astype(float) > 21.1)][
+                ["duration_decimal"]].astype(float)["duration_decimal"].min()
+            if str(year_best_21_1) == "nan":
+                year_best_21_1 = 0
+            year_duration = self.df[self.df["start_time"].str.contains(current_year)][
+                ["duration_decimal"]].astype(float)
+
+            self.fastest_speed = self.df[self.df["start_time"].str.contains(current_year)][
+                ["average_speed"]].astype(float)["average_speed"].max()
+            self.fastest_pace = 60 / self.fastest_speed
+            longest_run_top_3 = self.df[self.df["start_time"].str.contains(current_year)][
+                ["distance"]].astype(float)["distance"].nlargest(3)
+            #
+            longest_run_top_3_list = list(longest_run_top_3.reset_index()['distance'])
+            temp = len(longest_run_top_3_list)
+            for i in range(3 - temp):
+                longest_run_top_3_list.append(0)
+            self.year = current_year
+            self.yearly_running_distance = year_distance['distance'].sum()
+            self.yearly_running_duration = decimal_to_time(year_duration['duration_decimal'].sum() * 60000)
+            self.yearly_running_duration_decimal = year_duration['duration_decimal'].sum()
+            if year_duration['duration_decimal'].sum() != 0 or year_distance['distance'].sum() != 0:
+                self.average_speed_Km_h = '%.2f' % (year_distance['distance'].sum() / (year_duration['duration_decimal'].sum() / 60))
+                self.average_pace_min_Km = decimal_to_time((year_duration['duration_decimal'].sum() / year_distance['distance'].sum()) * 60000)[3:]
+            else:
+                self.average_speed_Km_h = '00.00'
+                self.average_pace_min_Km = '00:00:00'[3:]
+            self.Longest_run_1 = '%.2f' % longest_run_top_3_list[0]
+            self.Longest_run_2 = '%.2f' % longest_run_top_3_list[1]
+            self.Longest_run_3 = '%.2f' % longest_run_top_3_list[2]
+            self.fastest_10Km_1 = decimal_to_time(year_best_10k_top_3_list[0] * 60000)[3:]
+            self.fastest_10Km_2 = decimal_to_time(year_best_10k_top_3_list[1] * 60000)[3:]
+            self.fastest_10Km_3 = decimal_to_time(year_best_10k_top_3_list[2] * 60000)[3:]
+            self.Best_21_1 = decimal_to_time(year_best_21_1 * 60000)
+            self.append_data_to_yearly_top_scores_dict()
+            current_year = str(int(current_year) + 1)
+            # Print year summary:
+            if DEBUG  == 6:
+                self.print_year_summary()
+        # pandas dataframe for csv export
+        self.export_year_summary_to_csv()
+        if DEBUG == 7:
+            print(self.yearly_top_scores)
+        # self.pandas_learn()
+
+    def print_year_summary(self):
+        print(f"{'current_year:':40}{self.year}")
+        print(f"{'Total running distance: ':40}{'%.2f' % self.yearly_running_distance}")
+        print(f"{'Total running duration: ':40}{self.yearly_running_duration}")
+        if self.yearly_running_duration_decimal != 0 or self.yearly_running_distance != 0:
+            average_speed = self.yearly_running_distance / (self.yearly_running_duration_decimal / 60)
+            print(f"{'Yearly average speed [Km/h]: ':40}{'%.2f' % average_speed}")
+            average_pace = decimal_to_time(
+                (self.yearly_running_duration_decimal / self.yearly_running_distance) * 60000)
+            print(f"{'Yearly average pace [min/Km]':40}{average_pace[3:]:>5}")
+        else:
+            print(f"{'Yearly average speed [Km/h]: ':40}{'00.00'}")
+            print(f"{'Yearly average pace [min/Km]:':40}{'00:00'}")
+        if str(self.fastest_speed) == 'nan':
+            print(f"{'Fastest speed of the year [Km/h]: ':40}{'00.00'}")
+        else:
+            print(f"{'Fastest speed of the year [Km/h]: ':40}{'%.2f' % self.fastest_speed:0<5}")
+        if str(self.fastest_pace) == 'nan':
+            self.fastest_pace = 0
+        print(f"{'Fastest pace of the year [min/Km]: ':40}{decimal_to_time(self.fastest_pace * 60000)[3:]:>5}")
+        print(f"{'Top 3 longest runs of the year 1: ':40}{self.Longest_run_1} Km")
+        print(f"{'Top 3 longest runs of the year 2: ':40}{self.Longest_run_2} Km")
+        print(f"{'Top 3 longest runs of the year 3: ':40}{self.Longest_run_3} Km")
+        print(f"{'Top 3 fastest 10Km runs of the year 1: ':40}{self.fastest_10Km_1} min")
+        print(f"{'Top 3 fastest 10Km runs of the year 2: ':40}{self.fastest_10Km_2} min")
+        print(f"{'Top 3 fastest 10Km runs of the year 3: ':40}{self.fastest_10Km_3} min")
+        print(f"{'Best 21.1 running activity of the year: ':40}{self.Best_21_1} min")
+        print("*" * 70)
+
+    def pandas_learn(self):
+        print('^' * 100)
+        # pandas: change type of one column within dataframe [and not affecting other rows]
+        print("dtype before:", self.df["distance"].dtype)
+        self.df["distance"] = self.df["distance"].astype(float)
+        print("dtype after: ", self.df["distance"].dtype)
+        # pandas: find index values of nlargest and print rows based on index # values
+        ind_val = self.df[self.df["start_time"].str.contains('2024')]["distance"].astype(float).nlargest(3).index.values
+        print(ind_val)
+        # pandas: get rows based on index values
+        print(self.df.loc[ind_val])  # [["start_time", "distance"]])
+        # pandas: to deleted column from dataframe
+        z = self.df.loc[ind_val].reset_index().drop('index', axis=1)
+        longest_run = self.df[self.df["start_time"].str.contains('2024')][["distance"]].astype(float)["distance"].max()
+        print("longest_run:", longest_run)
+        print('^' * 100)
+
+    def export_year_summary_to_csv(self, transpose=0):
+        now = datetime.datetime.now()
+        self.date_for_file = now.strftime('%Y-%m-%d_T_%H_%M_%S')
+        year_summary_df = pd.DataFrame(self.yearly_top_scores, columns=self.yearly_top_scores_columns)
+        if transpose == 1:
+            year_summary_df = year_summary_df.transpose().reset_index()     # transpose table columns-rows
+        year_summary_df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file +
+                                    '_Runtastic_year_summary_Boaz.csv', index=False, header=True)
+        print("Generated Runtastic CSV path:\t", self.output_path[:-1] + self.date_for_folder +
+              '\nCSV File Name:\t\t\t\t\t', self.date_for_file + '_Runtastic_year_summary_Boaz.csv')
+        print(120 * '-')
 
     def __str__(self):
         if self.sport_type_id == "1":
             distance_float = [float(x) for x in self.export_dict['distance']]
             duration_decimal = [float(y) for y in self.export_dict['duration_decimal']]
-            # print(f"Total distance: \t\t{'%.2f' % (sum(distance_float)):>5}")
             total_duration_dec = sum(duration_decimal)
             hours = int(floor(total_duration_dec) / 60)
             minutes = floor(total_duration_dec) % 60
             seconds = floor((total_duration_dec - int(total_duration_dec)) * 60)
             total_duration_time = f"{int(hours/24)} days and {(hours % 24):0>2}:{minutes:0>2}:{seconds:0>2} --> " + \
                                   f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
-            # total_duration_time = f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
-            # print(f"Total duration: \t\t{total_duration_time}")
             average_pace = f"{'%.2f' % (60 * (sum(distance_float) / sum(duration_decimal))):>5}"
-            # print(f"Total average pace: \t{average_pace}")
-            # print(f"Total average speed:\t{'%.2f' % (sum(duration_decimal)/sum(distance_float)):>5}")
             ave_speed_dec = (sum(duration_decimal) / sum(distance_float))
             minutes = int(ave_speed_dec)
             seconds = '%2.0f' % ((ave_speed_dec % minutes) * 60)
             average_speed = f"{minutes :>2}:{seconds :0>2}"
-            # print(f"Total average speed:\t{average_speed}")
             fastest_max_10km_time = decimal_to_time(self.fastest_max_10km)
-            # print(f"Fastest 10Km:\t\t\t{fastest_max_10km_time} @ {self.fastest_10km_date}")
             fastest_max_21_1km_time = decimal_to_time(self.fastest_max_21_1km)
-            # print(f"Fastest 21.1Km:\t\t\t{fastest_max_21_1km_time} @ {self.fastest_21_1km_date}")
             fastest_max_42_2km_time = decimal_to_time(self.fastest_max_42_2km)
-            # print(f"Fastest 42.2Km:\t\t\t{fastest_max_42_2km_time} @ {self.fastest_42_2km_date}")
-
-
+            #
             return f"Total distance: \t\t{'%.2f' % (sum(distance_float)):>5} Km\n" \
                    + f"Total duration: \t\t{total_duration_time}\n"\
                    + f"Total average pace: \t{average_pace} Km/h\n"\
@@ -326,159 +496,9 @@ class Runtastic_Data_To_Csv:
             return "Error"
 
 
-def read_runtastic_json():
-    with open(json_file, 'r', encoding="utf8") as json_data:
-        json_data_content = json.load(json_data)
-
-    # type(json_data_content) = <class 'dict'>
-    # print(json_data_content)
-
-    # json_formated = json.dumps(json_data_content, indent=4)
-    # type(json_formated) = <class 'str'>
-    # print(json_formated)
-
-    print("\n" + "*" * 80 + "\n" + "*" * 80 + "\n" + "*" * 80 + "\n")
-    print("start_time\t", json_data_content["start_time"])
-    print("end_time\t", json_data_content["end_time"])
-    print("duration\t", json_data_content["duration"])
-
-    print("start_time\t", json_data_content["start_time"], "\t",
-          strftime('%Y-%m-%d %H:%M:%S', localtime(json_data_content["start_time"] / 1000)))
-    print("end_time\t", json_data_content["end_time"], "\t",
-          strftime('%Y-%m-%d %H:%M:%S', localtime(json_data_content["end_time"] / 1000)))
-    duration_h = int(floor(json_data_content["duration"] / 60000) / 60)
-    duration_min = floor(json_data_content["duration"] / 60000) % 60
-    duration_sec = '%.0f' % (
-                (json_data_content["duration"] / 60000 - floor(json_data_content["duration"] / 60000)) * 60)
-    print("duration\t", json_data_content["duration"], "\t\t",
-          f"{duration_h:0>2}:{duration_min:0>2}:{duration_sec:0>2}")
-
-    # print("created_at\t", json_data_content["created_at"], "\t", strftime('%Y-%m-%d %H:%M:%S',
-    #                                                                       localtime(json_data_content["created_at"]/1000)))
-    #
-    # print("updated_at\t", json_data_content["updated_at"], "\t", strftime('%Y-%m-%d %H:%M:%S',
-    #                                                                       localtime(json_data_content["updated_at"]/1000)))
-    print("calories\t", f'{json_data_content["calories"]}')
-    #
-    print("sport_type_id\t", json_data_content["sport_type_id"])
-
-    # print(json_data_content["features"][-1])
-
-    for dicts in json_data_content["features"]:
-        if "type" in dicts and "initial_values" in dicts['type']:
-            duration_h = int(floor(dicts["attributes"]["duration"] / 60000) / 60)
-            duration_min = floor(dicts["attributes"]["duration"] / 60000) % 60
-            duration_sec = '%.0f' % (
-                    (dicts["attributes"]["duration"] / 60000 - floor(dicts["attributes"]["duration"] / 60000)) * 60)
-            print("duration\t\t", dicts["attributes"]["duration"], "\t\t",
-                  f"{duration_h:0>2}:{duration_min:0>2}:{duration_sec:0>2}")
-            print("distance [Km]\t\t", f'{dicts["attributes"]["distance"] / 1000}')
-            print("sport_type_id\t", dicts["attributes"]["sport_type"]["id"])
-
-    for dicts in json_data_content["features"]:
-        if "type" in dicts and "track_metrics" in dicts['type']:
-            speed_factor = 3600 / 1000
-            # average_speed
-            print("average_speed raw\t", dicts["attributes"]["average_speed"])
-            ave_speed = float(dicts["attributes"]["average_speed"]) * speed_factor
-            print("average_speed\t\t", f"{('%.2f' % ave_speed):0>5}")
-            # average_pace = min_per_km
-            print("average_pace raw\t", dicts["attributes"]["average_pace"])
-            minutes = (float(dicts["attributes"]["average_pace"]) * (1000 / 60))
-            seconds = floor((minutes - int(minutes)) * 60)
-            print("average_pace\t\t", f"00:{int(minutes):0>2}:{seconds:0>2}")
-            # max_speed
-            print("max_speed raw\t\t", dicts["attributes"]["max_speed"])
-            max_speed = float(dicts["attributes"]["max_speed"]) * speed_factor
-            print("max_speed\t\t\t", f"{('%.2f' % max_speed):0>5}")
-
-    top_1km, top_5km, top_10km, top_21_1km, top_42_2km = 0, 0, 0, 0, 0
-    for dicts in json_data_content["features"]:
-        if "type" in dicts and "fastest_segments" in dicts['type']:
-            print("segments\t", dicts["attributes"]["segments"])
-            for top_speed in dicts["attributes"]["segments"]:
-                if "1km" in top_speed["distance"]:
-                    print("1km raw", top_speed["duration"])
-                    print("1km sec_dec",
-                          '%.2f' % (((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60))
-                    minutes = (int(top_speed["duration"] / 60000))
-                    print("1km min", minutes)
-                    seconds = floor(((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60)
-                    print("1km sec", seconds)
-                    print("1km -->", f"00:{minutes :0>2}:{seconds :0>2}")
-                    top_1km = 1
-                if "5km" in top_speed["distance"]:
-                    print("5km raw", top_speed["duration"])
-                    print("5km sec_dec",
-                          '%.2f' % (((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60))
-                    minutes = (int(top_speed["duration"] / 60000))
-                    print("5km min", minutes)
-                    seconds = floor(((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60)
-                    print("5km sec", seconds)
-                    print("5km -->", f"00:{minutes :0>2}:{seconds :0>2}")
-                    top_5km = 1
-                if "10km" in top_speed["distance"]:
-                    print("10km raw", top_speed["duration"])
-                    print("10km sec_dec",
-                          '%.2f' % (((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60))
-                    minutes = (int(top_speed["duration"] / 60000))
-                    print("10km min", minutes)
-                    seconds = floor(((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60)
-                    print("10km sec", seconds)
-                    print("10km -->", f"00:{minutes :0>2}:{seconds :0>2}")
-                    top_10km = 1
-                if "half_marathon" in top_speed["distance"]:
-                    print("21_1km raw", top_speed["duration"])
-                    print("21_1km sec_dec",
-                          '%.2f' % (((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60))
-                    hours = int(floor(top_speed["duration"] / 60000) / 60)
-                    print("21_1km hour", hours)
-                    minutes = floor(top_speed["duration"] / 60000) % 60
-                    # minutes = (int(top_speed["duration"]/60000))
-                    print("21_1km min", minutes)
-                    seconds = floor(((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60)
-                    print("21_1km sec", seconds)
-                    print("21_1km -->", f"{hours :0>2}:{minutes :0>2}:{seconds :0>2}")
-                    top_21_1km = 1
-                if "marathon" in top_speed["distance"]:
-                    print("42_2km raw", top_speed["duration"])
-                    print("42_2km sec_dec",
-                          '%.2f' % (((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60))
-                    hours = int(floor(top_speed["duration"] / 60000) / 60)
-                    print("42_2km hour", hours)
-                    minutes = floor(top_speed["duration"] / 60000) % 60
-                    # minutes = (int(top_speed["duration"]/60000))
-                    print("42_2km min", minutes)
-                    seconds = floor(((top_speed["duration"] / 60000) - int(top_speed["duration"] / 60000)) * 60)
-                    print("42_2km sec", seconds)
-                    print("42_2km -->", f"{hours :0>2}:{minutes :0>2}:{seconds :0>2}")
-                    top_42_2km = 1
-            if top_1km == 0:
-                print("1km -->", "00:00:00")
-            if top_5km == 0:
-                print("5km -->", "00:00:00")
-            if top_10km == 0:
-                print("10km -->", "00:00:00")
-            if top_21_1km == 0:
-                print("21.1km -->", "00:00:00")
-            if top_42_2km == 0:
-                print("42.2km -->", "00:00:00")
-
-    heart_rate_flag = 0
-    for dicts in json_data_content["features"]:
-        if "type" in dicts and "heart_rate" in dicts['type']:
-            print("ave_heart_rate\t", f'{dicts["attributes"]["average"]}')
-            print("max_heart_rate\t", f'{dicts["attributes"]["maximum"]}')
-            heart_rate_flag = 1
-    if heart_rate_flag == 0:
-        print("heart_rate average\t", 0)
-        print("heart_rate maximum\t", 0)
-    print("\n" + "*" * 80 + "\n" + "*" * 80 + "\n" + "*" * 80 + "\n")
-
-
 analyze_data = Runtastic_Data_To_Csv(_files_path=PATH, _output_path=OUTPUT_DIR_LOCATION)
-analyze_data.execute()
+analyze_data.execute(mode=2)
 
 print(analyze_data)
 
-# read_runtastic_json()
+# read_runtastic_json(json_file)
