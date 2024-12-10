@@ -4,14 +4,19 @@ environment {
     PATH = "C:/Users/USER/Documents/Python/Runtastic_Read_Json/venv/Scripts/python.exe;$PATH"
 }
   stages {
-    stage('run_script') {
+    stage('t 1') {
       steps {
-        sh 'python read_runtastic_json.py'
+        echo "AAA"
       }
     }
-    stage('version') {
+    stage('t 2') {
       steps {
-        sh 'python --version'
+        echo "BBB"
+      }
+    }
+    stage('t 3') {
+      steps {
+        echo "CCC"
       }
     }
   }
