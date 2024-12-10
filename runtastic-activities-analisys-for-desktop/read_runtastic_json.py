@@ -58,12 +58,15 @@ class Runtastic_Data_To_Csv:
         self.max_1km = '00:00:00'
         self.max_5km = '00:00:00'
         self.max_10km = '00:00:00'
+        self.max_10km_dec = 0
         self.fastest_max_10km = 3000000
         self.fastest_10km_date = ''
         self.max_21_1km = '00:00:00'
+        self.max_21_1km_dec = 0
         self.fastest_max_21_1km = 6000000
         self.fastest_21_1km_date = ''
         self.max_42_2km = '00:00:00'
+        self.max_42_2km_dec = 0
         self.fastest_max_42_2km = 12000000
         self.fastest_42_2km_date = ''
         self.max_heart_rate = '0'
@@ -72,24 +75,26 @@ class Runtastic_Data_To_Csv:
         self.export_dict = {}
         self.excel_columns = ['start_time', 'end_time', 'duration_decimal', 'duration', 'distance', 'average_pace',
                               'average_speed', 'max_speed', 'max_heart_rate', 'ave_heart_rate', 'calories',
-                              'max_1km', 'max_5km', 'max_10km', 'max_21_1km', 'max_42_2km']
+                              'max_1km', 'max_5km', 'max_10km', 'max_10km_dec', 'max_21_1km', 'max_21_1km_dec',
+                              'max_42_2km', 'max_42_2km_dec']
         self.excel_columns_raw = self.excel_columns + ['sport_type_id']
         for element in self.excel_columns:
             self.export_dict[element] = []
+        self.df = pd.DataFrame()
         #
-        self.year = "0"
+        self.year = '0'
         self.yearly_running_distance = 0
         self.yearly_running_duration = 0
         self.yearly_running_duration_decimal = 0
-        self.average_speed_Km_h = 0
-        self.average_pace_min_Km = 0
-        self.fastest_10Km_1 = 0
-        self.fastest_10Km_2 = 0
-        self.fastest_10Km_3 = 0
-        self.Longest_run_1 = 0
-        self.Longest_run_2 = 0
-        self.Longest_run_3 = 0
-        self.Best_21_1 = 0
+        self.average_speed_Km_h = ''
+        self.average_pace_min_Km = ''
+        self.fastest_10Km_1 = ''
+        self.fastest_10Km_2 = ''
+        self.fastest_10Km_3 = ''
+        self.Longest_run_1 = ''
+        self.Longest_run_2 = ''
+        self.Longest_run_3 = ''
+        self.Best_21_1 = ''
         self.fastest_pace = 0
         self.fastest_speed = 0
         self.yearly_top_scores = {}
@@ -128,8 +133,11 @@ class Runtastic_Data_To_Csv:
         self.max_1km = '00:00:00'
         self.max_5km = '00:00:00'
         self.max_10km = '00:00:00'
+        self.max_10km_dec = 0
         self.max_21_1km = '00:00:00'
+        self.max_21_1km_dec = 0
         self.max_42_2km = '00:00:00'
+        self.max_42_2km_dec = 0
         self.max_heart_rate = '0'
         self.ave_heart_rate = '0'
 
@@ -189,16 +197,19 @@ class Runtastic_Data_To_Csv:
                             self.fastest_max_10km = top_speed["duration"]
                             self.fastest_10km_date = self.date
                         self.max_10km = decimal_to_time(top_speed["duration"])
+                        self.max_10km_dec = top_speed["duration"]
                     if "half_marathon" in top_speed["distance"]:
                         if top_speed["duration"] < self.fastest_max_21_1km:
                             self.fastest_max_21_1km = top_speed["duration"]
                             self.fastest_21_1km_date = self.date
                         self.max_21_1km = decimal_to_time(top_speed["duration"])
+                        self.max_21_1km_dec = top_speed["duration"]
                     if top_speed["distance"] == "marathon":
-                        self.max_42_2km = decimal_to_time(top_speed["duration"])
                         if top_speed["duration"] < self.fastest_max_42_2km:
-                                self.fastest_max_42_2km = top_speed["duration"]
-                                self.fastest_42_2km_date = self.date
+                            self.fastest_max_42_2km = top_speed["duration"]
+                            self.fastest_42_2km_date = self.date
+                        self.max_42_2km = decimal_to_time(top_speed["duration"])
+                        self.max_42_2km_dec = top_speed["duration"]
 
 
     def append_data_to_dict(self):
@@ -217,8 +228,11 @@ class Runtastic_Data_To_Csv:
             self.export_dict['max_1km'].append(self.max_1km)
             self.export_dict['max_5km'].append(self.max_5km)
             self.export_dict['max_10km'].append(self.max_10km)
+            self.export_dict['max_10km_dec'].append(self.max_10km_dec)
             self.export_dict['max_21_1km'].append(self.max_21_1km)
+            self.export_dict['max_21_1km_dec'].append(self.max_21_1km_dec)
             self.export_dict['max_42_2km'].append(self.max_42_2km)
+            self.export_dict['max_42_2km_dec'].append(self.max_42_2km_dec)
             self.num_of_running_files += 1
 
     def get_data(self):
@@ -316,7 +330,20 @@ class Runtastic_Data_To_Csv:
         print(now.strftime('%Y-%m-%d_@_%H:%M:%S'), 'CSV is ready')
         print(120 * '-')
 
+    def end_time_data_summary_message(self):
+        now = datetime.datetime.now()
+        print(now.strftime('%Y-%m-%d_@_%H:%M:%S'), 'Finished processing')
+        print(120 * '-')
+
     def execute(self, mode=0):
+        """
+        :param mode:
+        0 - Generate both detailed activities data & yearly distance and top results
+        1 - All Detailed activities data
+        2 - Generate yearly distance and top results
+        :return: None
+        """
+
         self.start_time_message()
         self.create_output_folder()
         self.get_data()
@@ -398,7 +425,7 @@ class Runtastic_Data_To_Csv:
             self.append_data_to_yearly_top_scores_dict()
             current_year = str(int(current_year) + 1)
             # Print year summary:
-            if DEBUG  == 6:
+            if DEBUG == 6:
                 self.print_year_summary()
         # pandas dataframe for csv export
         self.export_year_summary_to_csv()
@@ -453,6 +480,11 @@ class Runtastic_Data_To_Csv:
         print('^' * 100)
 
     def export_year_summary_to_csv(self, transpose=0):
+        """
+
+        :param transpose: transpose columns-rows of the generated yearly results and top results csv
+        :return: None; generates csv
+        """
         now = datetime.datetime.now()
         self.date_for_file = now.strftime('%Y-%m-%d_T_%H_%M_%S')
         year_summary_df = pd.DataFrame(self.yearly_top_scores, columns=self.yearly_top_scores_columns)
@@ -463,6 +495,30 @@ class Runtastic_Data_To_Csv:
         print("Generated Runtastic CSV path:\t", self.output_path[:-1] + self.date_for_folder +
               '\nCSV File Name:\t\t\t\t\t', self.date_for_file + '_Runtastic_year_summary_Boaz.csv')
         print(120 * '-')
+
+    # TODO continue creating functions for ll yearly parameters
+    # def per_year_distance(self, _year):
+    #     year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
+    #     total_running_km = year_distance['distance'].sum()
+    #     return total_running_km
+    #     # print("*-*" * 20, total_running_km, "*-*" * 20)
+    #
+    # def per_year_best_10k(self, _year, _num_of_runs):
+    #     year_best_10ks = self.df[(self.df["start_time"].str.contains(str(_year))) &
+    #                                   (self.df["distance"].astype(float) > 10)]
+    #     year_best_10ks = year_best_10ks[["duration_decimal"]].astype(float)["duration_decimal"]
+    #     year_best_10ks = year_best_10ks.nsmallest(_num_of_runs)
+    #     year_best_10ks_list = list(year_best_10ks.reset_index()['duration_decimal'])
+    #     temp = len(year_best_10ks_list)
+    #     for i in range(_num_of_runs - temp):
+    #         year_best_10ks_list.append(0)
+    #     for i in range(len(year_best_10ks_list)):
+    #         year_best_10k = decimal_to_time(year_best_10ks_list[i] * 60000)
+    #         if year_best_10k[1] != "0":
+    #             year_best_10ks_list[i] = year_best_10k[1:]
+    #         else:
+    #             year_best_10ks_list[i] = year_best_10k[3:]
+    #     return year_best_10ks_list
 
     def __str__(self):
         if self.sport_type_id == "1":
@@ -496,9 +552,17 @@ class Runtastic_Data_To_Csv:
             return "Error"
 
 
-analyze_data = Runtastic_Data_To_Csv(_files_path=PATH, _output_path=OUTPUT_DIR_LOCATION)
-analyze_data.execute(mode=2)
+# class runtastic_data_filter(Runtastic_Data_To_Csv):
+#     pass
 
-print(analyze_data)
+if __name__ == "__main__":
+    analyze_data = Runtastic_Data_To_Csv(_files_path=PATH, _output_path=OUTPUT_DIR_LOCATION)
+    analyze_data.execute(mode=0)
 
-# read_runtastic_json(json_file)
+    print(analyze_data)
+
+    # read_runtastic_json(json_file)
+
+
+
+
