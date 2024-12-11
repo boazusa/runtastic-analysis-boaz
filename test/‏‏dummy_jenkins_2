@@ -7,7 +7,7 @@ environment {
         stage('Checkout') {
             steps {
                 // Checkout the repository
-                git https://github.com/boazusa/runtastic-analysis-boaz.git
+                git 'https://github.com/boazusa/runtastic-analysis-boaz.git'
             }
         }
 
