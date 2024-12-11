@@ -11,43 +11,5 @@ environment {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                script {
-                    // Install required dependencies if you have a requirements.txt
-                    sh """
-                    ${PYTHON_HOME} -m venv venv  # Create a virtual environment
-                    source venv/bin/activate      # Activate the virtual environment
-                    //pip install -r requirements.txt  # Install dependencies
-                    """
-                }
-            }
-        }
-
-        stage('Run Python Script') {
-            steps {
-                script {
-                    // Run your Python script (adjust path as needed)
-                    sh """
-                    source venv/bin/activate       # Activate virtual environment
-                    ${PYTHON_HOME} your_script.py  # Replace with your script name
-                    """
-                }
-            }
-        }
-
-        stage('Clean Up') {
-            steps {
-                // Clean up, e.g., removing virtual environment or other temporary files
-                sh 'rm -rf venv'
-            }
-        }
-    }
-    
-    post {
-        always {
-            // Actions to perform after pipeline run, e.g., notifications
-            echo 'Pipeline execution complete'
-        }
-    }
+        
 }
