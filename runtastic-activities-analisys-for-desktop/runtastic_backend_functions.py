@@ -1,4 +1,9 @@
+import datetime
+import os
+import pandas as pd
+
 import read_runtastic_json
+from matplotlib import pyplot as plt
 
 
 
@@ -15,24 +20,82 @@ def decimal_duration_to_time(duration):
 
 class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
     def create_main_dataframe(self):
-        # self.start_time_message()
+        self.start_time_message()
         # self.create_output_folder()
         self.get_data()
         self.create_dataframe_form_list()
         # self.end_time_data_summary_message()
 
     def per_year_distance(self, _year):
+        """
+        :param _year: STR, Ex. '2024'
+        :return: float, total running Km in a year
+        """
         year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
         total_running_km = year_distance['distance'].sum()
         return total_running_km
 
+    def per_every_year_distance(self, start_year="2014"):
+        """
+        :param start_year: str of starting year; defaulted to '2014'
+        :return: pandas DataFrame [pd.DataFrame] of 'year' and 'Distance (per year)' columns from 2014 to today's year
+        """
+
+        now = datetime.datetime.now().strftime('%Y')
+        # start_year = "2014"
+        out = []
+        dist_list = []
+        year_list = []
+        while int(start_year) <= int(now):
+            yearly_dist = float('%.2f' % self.per_year_distance(start_year))
+            year = int(start_year)
+            out.append([year, float(yearly_dist)])
+            dist_list.append(yearly_dist)
+            year_list.append(year)
+            start_year = int(start_year) + 1
+        data = {'year': year_list, 'Distance': dist_list}
+        yearly_dist_df = pd.DataFrame(data, columns=['year', 'Distance'])
+        return yearly_dist_df
+
+    def plot_per_every_year_distance(self, plot_save_format='jpg'):
+        """
+        :param plot_save_format: plot file type: png, pdf, jpg, svg
+        :return: plot file name and current directory
+        """
+
+        dist_df = self.per_every_year_distance()
+        # data plot
+        ax = dist_df.plot(x='year', y='Distance', alpha=0.9,  kind='bar', color='skyblue')
+        # labels and title
+        plt.xlabel('Year')
+        plt.ylabel('Distance')
+        plt.title('Distance per Year')
+        for i, value in enumerate(dist_df['Distance']):
+            ax.text(i, value + 0.2, str(value), ha='center', va='bottom')
+        # Show the plot
+        # plt.show() # block=False)
+        if not os.path.exists('plots'):
+            os.makedirs('plots')
+        plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
+        plt.savefig(f'plots/histogram_plot_{plot_date}.{plot_save_format}')
+        plt.close()
+        return f"plot 'histogram_plot_{plot_date}.{plot_save_format}' was saved to {os.getcwd()}\plots"
+
     def per_year_duration(self, _year):
+        """
+        :param _year: STR, Ex. '2024'
+        :return: str, total days, hours, min, sec of running activities in a year; Ex. 187:14:01 --> 7 days and 19:14:01
+        """
         year_duration = self.df[self.df["start_time"].str.contains(str(_year))][["duration_decimal"]].astype(float)
         # yearly_running_duration = decimal_to_time(year_duration['duration_decimal'].sum() * 60000)
         total_duration_dec = year_duration['duration_decimal'].sum()
         return decimal_duration_to_time(total_duration_dec)
 
     def per_year_speed(self, _year):
+        """
+        :param _year: STR, Ex. '2024'
+        :return: float, average Km/h in a year
+        """
         year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
         year_duration = self.df[self.df["start_time"].str.contains(str(_year))][["duration_decimal"]].astype(float)
         if year_duration['duration_decimal'].sum() != 0 or year_distance['distance'].sum() != 0:
@@ -43,6 +106,10 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         return average_speed_km_h
 
     def per_year_pace(self, _year):
+        """
+        :param _year: STR, Ex. '2024'
+        :return: str, average mm:ss per Km in a year
+        """
         year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
         year_duration = self.df[self.df["start_time"].str.contains(str(_year))][["duration_decimal"]].astype(float)
         if year_duration['duration_decimal'].sum() != 0 or year_distance['distance'].sum() != 0:
@@ -53,6 +120,10 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         return average_pace_min_km
 
     def per_year_calories(self, _year):
+        """
+        :param _year: STR, Ex. '2024'
+        :return: int, total calories burned in a year
+        """
         year_calories = self.df[self.df["start_time"].str.contains(str(_year))][["calories"]].astype(int)
         total_calories = year_calories['calories'].sum()
         return total_calories
@@ -139,12 +210,12 @@ if __name__ == "__main__":
     print(f"Calories: {test.per_year_calories('2022')} Cal")
     print("*" * 50)
 
-    X = test.per_year_best_running("2021", 5)
+    X = test.per_year_best_running("2024", 5)
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) duration: {item[0]:^7} @ {item[1]:^12}")
     print("*" * 50)
 
-    X = test.per_year_best_running("2024", 3, "max_21_1km_dec")
+    X = test.per_year_best_running("2023", 3, "max_21_1km_dec")
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) duration: {item[0]:^7} @ {item[1]:^12}")
     print("*" * 50)
@@ -158,4 +229,7 @@ if __name__ == "__main__":
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) Distance: {item[0]:<7} @ {item[1]:^12}")
     print("*" * 50)
+
+    print(test.per_every_year_distance())
+    print(test.plot_per_every_year_distance())
 
