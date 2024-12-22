@@ -45,7 +45,9 @@ class Runtastic_Data_To_Csv:
         self.date_for_file = ""
         self.num_of_running_files = 0
         self.sport_type_id = '0'
-        self.start_time = '0'
+        self.date = '0'
+        self.start_time = '0'       # TODO add numeric value column for plots
+        self.start_time_dec = 0
         self.end_time = '0'
         self.duration = '0'
         self.duration_decimal = '0'
@@ -75,10 +77,11 @@ class Runtastic_Data_To_Csv:
         self.export_dict = {}
         self.excel_columns = ['start_time', 'end_time', 'duration_decimal', 'duration', 'distance', 'average_pace',
                               'average_speed', 'max_speed', 'max_heart_rate', 'ave_heart_rate', 'calories',
-                              'max_1km', 'max_5km', 'max_10km', 'max_10km_dec', 'max_21_1km', 'max_21_1km_dec',
-                              'max_42_2km', 'max_42_2km_dec']
-        self.excel_columns_raw = self.excel_columns + ['sport_type_id']
-        for element in self.excel_columns:
+                              'max_1km', 'max_5km', 'max_10km', 'max_21_1km', 'max_42_2km']
+
+        self.excel_columns_raw = self.excel_columns + ['max_10km_dec', 'max_21_1km_dec',
+                                                       'max_42_2km_dec', 'start_time_dec']
+        for element in self.excel_columns_raw:
             self.export_dict[element] = []
         self.df = pd.DataFrame()
         #
@@ -121,6 +124,7 @@ class Runtastic_Data_To_Csv:
         self.sport_type_id = '0'
         self.date = '0'
         self.start_time = '0'
+        self.start_time_dec = 0
         self.end_time = '0'
         self.duration = '0'
         self.duration_decimal = '0'
@@ -144,6 +148,7 @@ class Runtastic_Data_To_Csv:
     def time_and_distance(self):
         self.date = strftime('%m-%d-%Y', localtime(self.json_data_content["start_time"] / 1000))
         self.start_time = strftime('%Y-%m-%d %H:%M:%S', localtime(self.json_data_content["start_time"] / 1000))
+        self.start_time_dec = self.json_data_content["start_time"]
         self.end_time = strftime('%Y-%m-%d %H:%M:%S', localtime(self.json_data_content["end_time"] / 1000))
         self.duration_decimal = '%.2f' % (self.json_data_content["duration"] / 60000)
         duration_h = int(floor(self.json_data_content["duration"] / 60000) / 60)
@@ -215,6 +220,7 @@ class Runtastic_Data_To_Csv:
     def append_data_to_dict(self):
         if self.distance != "0":
             self.export_dict['start_time'].append(self.start_time)
+            self.export_dict['start_time_dec'].append(self.start_time_dec)
             self.export_dict['end_time'].append(self.end_time)
             self.export_dict['duration'].append(self.duration)
             self.export_dict['duration_decimal'].append(self.duration_decimal)
@@ -305,13 +311,14 @@ class Runtastic_Data_To_Csv:
         else:
             return "Not a running activity"
 
-    def create_dataframe_form_list(self):
-        self.df = pd.DataFrame(self.export_dict, columns=self.excel_columns)
+    def create_raw_dataframe_form_list(self):
+        self.df = pd.DataFrame(self.export_dict, columns=self.excel_columns_raw)
 
     def export_to_csv(self):
         now = datetime.datetime.now()
         self.date_for_file = now.strftime('%Y-%m-%d_T_%H_%M_%S')
-        self.df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv',
+        export_df = pd.DataFrame(self.export_dict, columns=self.excel_columns)
+        export_df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv',
                        index=False, header=True)
         # print("=====", self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv')
         print("Number of 'running' files =", f'{self.num_of_running_files:^18}')
@@ -347,7 +354,7 @@ class Runtastic_Data_To_Csv:
         self.start_time_message()
         self.create_output_folder()
         self.get_data()
-        self.create_dataframe_form_list()
+        self.create_raw_dataframe_form_list()
         if mode == 0:
             self.get_year_distance()
             self.export_to_csv()
@@ -496,7 +503,7 @@ class Runtastic_Data_To_Csv:
               '\nCSV File Name:\t\t\t\t\t', self.date_for_file + '_Runtastic_year_summary_Boaz.csv')
         print(120 * '-')
 
-    # TODO continue creating functions for ll yearly parameters
+    # TODO continue creating functions for all yearly parameters
     # def per_year_distance(self, _year):
     #     year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
     #     total_running_km = year_distance['distance'].sum()
