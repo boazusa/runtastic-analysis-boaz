@@ -243,11 +243,11 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :return:
         """
         if '21' in running_distance:
-            run, units = '21.1Km', '[hh:mm:ss]'
+            run, units, color = '21.1Km', '[hh:mm:ss]', '#0cef24'
         elif '42' in running_distance:
-            run, units = '42.2Km', '[hh:mm:ss]'
+            run, units, color = '42.2Km', '[hh:mm:ss]', '#2ac4c4'
         else:
-            run, units = '10Km', '[mm:ss]'
+            run, units, color = '10Km', '[mm:ss]', 'skyblue'
         best_running_df = pd.DataFrame(self.per_every_year_best_running(_start_year=start_year,
                                                                         _num_of_runs=_num_of_runs,
                                                                         running_distance=running_distance),
@@ -255,8 +255,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         best_running_df = best_running_df.replace('N/A', pd.NA).dropna(subset=["Duration"]).reset_index()
         best_running_df = best_running_df.drop('index', axis=1)
         best_running_df['Date'] = pd.to_datetime(best_running_df['Date'], format='%Y-%m-%d', errors='coerce')
+        best_running_df['start_time'] = (best_running_df['start_time_dec'] / 1000) + 7200   # adjust to ISR time
+        best_running_df['start_time'] = pd.to_datetime(best_running_df['start_time'], unit='s')
+        print(best_running_df)
         best_running_df = best_running_df.dropna(subset=['Date'])
-        ax = best_running_df.plot(x='Date', y='Duration_raw', kind='bar', color='skyblue')
+        ax = best_running_df.plot(x='start_time', y='Duration_raw', kind='bar',
+                                  color=color, figsize=(12, 6), label="Duration")
         #
         plt.yticks([])
         plt.xticks(rotation=90)
@@ -271,12 +275,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         for i, value in enumerate(best_running_df['Duration_raw']):
             ax.text(i, value - 0.2, str(decimal_to_time(value))[n:], ha='center', va='bottom', rotation=65)
         # Manually set y-limits
-        plt.ylim(min(best_running_df['Duration_raw']) - 100000, max(best_running_df['Duration_raw']) + 470000)
+        plt.ylim(min(best_running_df['Duration_raw']) - 350000, max(best_running_df['Duration_raw']) + 470000)
         # plt.show()
         if not os.path.exists('plots'):
             os.makedirs('plots')
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
-        plt.savefig(f'plots/best_{run}_histogram_plot_{plot_date}.{plot_save_format}')
+        plt.savefig(f'plots/best_{run}_histogram_plot_{plot_date}.{plot_save_format}', bbox_inches='tight', dpi=300, pad_inches=0.3)
         plt.close()
         return f"plot 'best_{run}_histogram_plot_{plot_date}.{plot_save_format}' was saved to {os.getcwd()}\plots"
 
