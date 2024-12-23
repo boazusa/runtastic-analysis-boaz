@@ -131,6 +131,8 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             per_year_attr = self.per_year_distance
         elif _attribute == 'calories':
             per_year_attr = self.per_year_calories
+        elif _attribute == 'Speed':
+            per_year_attr = self.per_year_speed
         else:
             per_year_attr = self.per_year_distance
         #
@@ -156,12 +158,15 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         if _attribute == 'calories':
             att_ylabel, att_title, att_color = 'Calories [Cal]', 'Calories burned per Year', 'skyblue'
             attr_df[_attribute] = attr_df[_attribute].astype(int)
+        elif _attribute == 'Speed':
+            att_ylabel, att_title, att_color = 'Speed [km/h]', 'Running Speed per Year', '#fc9100'
         else:
             att_ylabel, att_title, att_color = 'Distance [km]', 'Running Distance per Year', '#25d0e8'
         # data plot
-        ax = attr_df.plot(x='year', y=_attribute, alpha=0.9, kind='bar', color=att_color, label=_attribute.capitalize())
+        ax = attr_df.plot(x='year', y=_attribute, alpha=0.9, kind='bar', color=att_color, label=att_ylabel.capitalize())
         # labels and title
         plt.xlabel('Year')
+        plt.ylim(0, max(attr_df[_attribute]) * 1.225)
         plt.ylabel(att_ylabel)
         plt.title(att_title)
 
@@ -476,14 +481,15 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         pdf_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         if PDF_SAVE:
             with PdfPages(f'plots/analysis_plots_{pdf_date}.pdf') as pdf:
-                print('*', self.plot_per_every_year_attribute(_attribute='Distance', pdf_p=pdf), '*')
-                print('*', self.plot_per_every_year_attribute(_attribute='calories', pdf_p=pdf), '*')
-                print('*', self.plot_per_every_year_duration(pdf_p=pdf), '*')
-                print('*', self.plot_per_every_year_speed(pdf_p=pdf), '*')
-                print('*', self.plot_per_every_year_longest_running(pdf_p=pdf), '*')
-                print('*', self.plot_per_year_fastest_running(running_distance="max_10km_dec", pdf_p=pdf), '*')
-                print('*', self.plot_per_year_fastest_running(running_distance="max_21_1km_dec", pdf_p=pdf), '*')
-                print('*', self.plot_per_year_fastest_running(running_distance="max_42_2km_dec", pdf_p=pdf), '*')
+                print('***', self.plot_per_every_year_attribute(_attribute='Distance', pdf_p=pdf), '***')
+                print('***', self.plot_per_every_year_attribute(_attribute='calories', pdf_p=pdf), '***')
+                print('***', self.plot_per_every_year_attribute(_attribute='Speed', pdf_p=pdf), '***')
+                print('***', self.plot_per_every_year_duration(pdf_p=pdf), '***')
+                # print('***', self.plot_per_every_year_speed(pdf_p=pdf), '***')
+                print('***', self.plot_per_every_year_longest_running(pdf_p=pdf), '***')
+                print('***', self.plot_per_year_fastest_running(running_distance="max_10km_dec", pdf_p=pdf), '***')
+                print('***', self.plot_per_year_fastest_running(running_distance="max_21_1km_dec", pdf_p=pdf), '***')
+                print('***', self.plot_per_year_fastest_running(running_distance="max_42_2km_dec", pdf_p=pdf), '***')
             return f"Document 'analysis_plots_{pdf_date}.pdf' was saved to {os.getcwd()}\plots"
         else:
             return f"Saving plots to pdf is disabled"
@@ -537,8 +543,9 @@ if __name__ == "__main__":
 
     print(test.plot_per_every_year_attribute(_attribute='Distance'))
     print(test.plot_per_every_year_attribute(_attribute='calories'))
+    print(test.plot_per_every_year_attribute(_attribute='Speed'))
     print(test.plot_per_every_year_duration())
-    print(test.plot_per_every_year_speed())
+    # print(test.plot_per_every_year_speed())
     print(test.plot_per_year_fastest_running(running_distance="max_10km_dec"))
     print(test.plot_per_year_fastest_running(running_distance="max_21_1km_dec"))
     print(test.plot_per_year_fastest_running(running_distance="max_42_2km_dec"))
