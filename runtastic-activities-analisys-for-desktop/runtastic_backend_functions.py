@@ -24,6 +24,19 @@ def decimal_duration_to_time_hh_mm_ss(duration):
     seconds = int((duration - int(duration)) * 60)
     return f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
 
+def save_plot(_to_pdf=0, _pdf_p=None, _plt_p=plt, _file_name='', _pdf_msg=''):
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+    #
+    if _to_pdf:
+        _pdf_p.savefig(bbox_inches='tight', dpi=300, pad_inches=0.3)  # Save the current plot to the PDF
+        _plt_p.close()
+        return f"{_pdf_msg:<35}" + " was added to pdf"
+    else:
+        _plt_p.savefig(f'plots/' + _file_name, bbox_inches='tight', dpi=300, pad_inches=0.3)
+        _plt_p.close()
+        _file_name += "'"
+        return f"plot '{_file_name:<60} was saved to {os.getcwd()}\plots"
 
 class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
     # def __init__(self, pdf=0):
@@ -85,7 +98,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         # labels and title
         plt.xlabel('Year')
         plt.ylabel('Distance [km]')
-        plt.title('Running distance per Year')
+        plt.title('Running Distance per Year')
         for i, value in enumerate(dist_df['Distance']):
             ax.text(i, value + 0.2, str(value), ha='center', va='bottom', rotation=25)
         # Show the plot
@@ -137,17 +150,18 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :return: string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
         attr_df = self.per_every_year_attribute(_attribute=_attribute)
+        if _attribute == 'calories':
+            att_ylabel, att_title, att_color = 'Calories [Cal]', 'Calories burned per Year', 'skyblue'
+            attr_df[_attribute] = attr_df[_attribute].astype(int)
+        else:
+            att_ylabel, att_title, att_color = 'Distance [km]', 'Running Distance per Year', '#25d0e8'
         # data plot
-        ax = attr_df.plot(x='year', y=_attribute, alpha=0.9, kind='bar', color='skyblue', label=_attribute.capitalize())
+        ax = attr_df.plot(x='year', y=_attribute, alpha=0.9, kind='bar', color=att_color, label=_attribute.capitalize())
         # labels and title
         plt.xlabel('Year')
-        if _attribute == 'calories':
-            attr_df[_attribute] = attr_df[_attribute].astype(int)
-            plt.ylabel('Calories [Cal]')
-            plt.title('Calories burned per Year')
-        else:
-            plt.ylabel('Distance [km]')
-            plt.title('Running distance per Year')
+        plt.ylabel(att_ylabel)
+        plt.title(att_title)
+
         for i, value in enumerate(attr_df[_attribute]):
             ax.text(i, value + 0.2, str(attr_df[_attribute][i]), ha='center', va='bottom', rotation=25)
         # Show the plot
@@ -156,15 +170,10 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             os.makedirs('plots')
         #
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
-        if _to_pdf:
-            pdf_p.savefig(bbox_inches='tight', dpi=300, pad_inches=0.3)  # Save the current plot to the PDF
-            plt.close()
-            return f"'yearly_" + _attribute.lower() + f"_histogram_plot' \twas added to pdf"
-        else:
-            file_name = 'yearly_' + _attribute.lower() + f'_histogram_plot_{plot_date}.{plot_save_format}'
-            plt.savefig(f'plots/' + file_name, bbox_inches='tight', dpi=300, pad_inches=0.3)
-            plt.close()
-            return f"'plot {file_name}' was saved to {os.getcwd()}\plots"
+        #
+        pdf_msg = f"'yearly_" + _attribute.lower() + f"_histogram_plot'"
+        file_name = 'yearly_' + _attribute.lower() + f'_histogram_plot_{plot_date}.{plot_save_format}'
+        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def per_year_duration(self, _year):
         """
@@ -205,7 +214,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         plt.xlabel('Year')
         plt.ylabel('Duration')
         plt.yticks([])
-        plt.title('Running distance per Year')
+        plt.title('Running Duration per Year')
         for i, value in enumerate(duration_df['duration_dec']):
             ax.text(i, value + 0.2, str(duration_df['duration_str'][i]), ha='center', va='bottom', rotation=25)
         # Show the plot
@@ -214,15 +223,9 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             os.makedirs('plots')
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         #
-        if _to_pdf:
-            pdf_p.savefig(bbox_inches='tight', dpi=300, pad_inches=0.3)  # Save the current plot to the PDF
-            plt.close()
-            return f"'yearly_duration_histogram_plot'" + f' \twas added to pdf'
-        else:
-            plt.savefig(f'plots/yearly_duration_histogram_plot_{plot_date}.{plot_save_format}',
-                        bbox_inches='tight', dpi=300, pad_inches=0.3)
-            plt.close()
-            return f"plot 'yearly_duration_histogram_plot_{plot_date}.{plot_save_format}' was saved to {os.getcwd()}\plots"
+        pdf_msg = f"'yearly_duration_histogram_plot'"
+        file_name = f'yearly_duration_histogram_plot_{plot_date}.{plot_save_format}'
+        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def total_duration(self):
         total_duration = self.df[["duration_decimal"]].astype(float)['duration_decimal'].sum()
@@ -314,9 +317,6 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                 else:
                     year_best_runs_list[i][0] = year_best_running[3:]
                 year_best_runs_list[i][1] = year_best_runs_list[i][1][:10]
-        # TODO
-        # df = pd.DataFrame(year_best_runs_list, columns=[running_distance,
-        #                                                 "start_time", 'calories', 'start_time_dec'])
         return year_best_runs_list
 
     def per_every_year_best_running(self, _start_year="2014", _num_of_runs=3, running_distance="max_10km_dec"):
@@ -363,6 +363,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         best_running_df['Date'] = pd.to_datetime(best_running_df['Date'], format='%Y-%m-%d', errors='coerce')
         best_running_df['start_time'] = (best_running_df['start_time_dec'] / 1000) + 7200   # adjust to ISR time
         best_running_df['start_time'] = pd.to_datetime(best_running_df['start_time'], unit='s')
+        best_running_df = best_running_df.sort_values(by='start_time_dec')
         best_running_df = best_running_df.dropna(subset=['Date'])
         ax = best_running_df.plot(x='start_time', y='Duration_raw', kind='bar',
                                   color=color, figsize=(max((len(best_running_df) + 1)//2, 4), 6), label="Duration")
@@ -386,15 +387,9 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             os.makedirs('plots')
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         #
-        if _to_pdf:
-            pdf_p.savefig(bbox_inches='tight', dpi=300, pad_inches=0.3)  # Save the current plot to the PDF
-            plt.close()
-            return f"'best_{run}_histogram_plot'" + f' \t\twas added to pdf'
-        else:
-            plt.savefig(f'plots/best_{run}_histogram_plot_{plot_date}.{plot_save_format}',
-                        bbox_inches='tight', dpi=300, pad_inches=0.3)
-            plt.close()
-            return f"plot 'best_{run}_histogram_plot_{plot_date}.{plot_save_format}' was saved to {os.getcwd()}\plots"
+        pdf_msg = f"'best_{run}_histogram_plot'"
+        file_name = f'best_{run}_histogram_plot_{plot_date}.{plot_save_format}'
+        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def per_year_longest_running(self, _year, _num_of_runs):
         """
@@ -435,28 +430,22 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         longest_runs_df['Distance'] = longest_runs_df['Distance'].astype(float).round(2)
         longest_runs_df['start_time'] = (longest_runs_df['start_time_dec'] / 1000) + 7200  # adjust to ISR time
         longest_runs_df['start_time'] = pd.to_datetime(longest_runs_df['start_time'], unit='s')
+        longest_runs_df = longest_runs_df.sort_values(by='start_time_dec')
         ax = longest_runs_df.plot(x='start_time', y='Distance', alpha=0.9, kind='bar', color='#ba03bd',
                                   figsize=(max((len(longest_runs_df) + 1) // 2, 4), 6), label='Distance [Km]')
         plt.xlabel('Year')
         plt.ylabel('Distance')
         # plt.xticks(longest_runs_df['start_time_dec'], longest_runs_df['start_time'])
         for i, value in enumerate(longest_runs_df['Distance']):
-            ax.text(i, value + 0.2, str(longest_runs_df['Distance'][i]), ha='center', va='bottom', rotation=25)
+            ax.text(i, value + 0.2, str(value), ha='center', va='bottom', rotation=25)
         # plt.show()
         if not os.path.exists('plots'):
             os.makedirs('plots')
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         #
-        if _to_pdf:
-            pdf_p.savefig(bbox_inches='tight', dpi=300, pad_inches=0.3)  # Save the current plot to the PDF
-            plt.close()
-            return f"'longest_running_histogram_plot'" + f' \twas added to pdf'
-        else:
-            plt.savefig(f'plots/longest_running_histogram_plot_{plot_date}.{plot_save_format}',
-                        bbox_inches='tight', dpi=300, pad_inches=0.3)
-            plt.close()
-            return f"plot 'longest_running_histogram_plot_{plot_date}.{plot_save_format}' " \
-                   f"was saved to {os.getcwd()}\plots"
+        pdf_msg = f"'longest_running_histogram_plot'"
+        file_name = f'longest_running_histogram_plot_{plot_date}.{plot_save_format}'
+        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def save_plot_to_pdf(self):
         pdf_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
@@ -506,16 +495,16 @@ if __name__ == "__main__":
         print(f"{i + 1:0>2}) duration: {item[0]:^7} @ {item[1]:^12}, Calories burned: {item[2]:^6}")
     print("*" * 60)
 
-    X = test.per_year_longest_running("2022", 5)
+    X = test.per_year_longest_running("2024", 5)
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) Distance: {item[0]:<7} @ {item[1]:^12}")
     print("*" * 60)
-    print(test.per_every_year_longest_running())
-    print("*" * 60)
-    print(test.per_every_year_attribute(_attribute='calories'))
-    print("*" * 60)
-    print(test.per_every_year_attribute(_attribute='Distance'))
-    print("*" * 60)
+    # print(test.per_every_year_longest_running())
+    # print("*" * 60)
+    # print(test.per_every_year_attribute(_attribute='calories'))
+    # print("*" * 60)
+    # print(test.per_every_year_attribute(_attribute='Distance'))
+    # print("*" * 60)
 
     # plots
 

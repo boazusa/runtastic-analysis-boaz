@@ -9,10 +9,10 @@ import datetime
 
 
 # Jerusalem Marathon
-json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2024-03-08_05-01-39-UTC_b0ba3a9b-a1b9-4bc3-b13c-795d5a2b579e.json"
+json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2024-03-08_05-01-39-UTC_b0ba3a9b-a1b9-4bc3-b13c-795d5a2b579e.json"   # marathon
 # json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2024-04-21_19-38-40-UTC_92e8cd55-89bc-4b36-8091-4521b9683d47.json"
 # json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2014-11-10_02-00-52-UTC_55d975a493bc7d05fa58603b.json"
-json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2022-08-25_12-48-05-UTC_3cbc3ffa-5eee-4eac-82a9-ac3144e4a84b.json"
+# json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2022-08-25_12-48-05-UTC_3cbc3ffa-5eee-4eac-82a9-ac3144e4a84b.json" # not a running activity
 
 
 def epoch_time_convert(_etime):
