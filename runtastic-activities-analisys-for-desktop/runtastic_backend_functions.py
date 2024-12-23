@@ -9,7 +9,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 decimal_to_time = read_runtastic_json.decimal_to_time
 PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20241103-000\Sport-sessions\\'
 OUTPUT_DIR_LOCATION = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Excel_and_CSV_new\\'  # _output_path
-PDF_SAVE = 1    #
+PDF_SAVE = 1  #
+
 
 def decimal_duration_to_time(duration):
     hours = int(int(duration) / 60)
@@ -18,17 +19,19 @@ def decimal_duration_to_time(duration):
     return f"{hours:0>2}:{minutes:0>2}:{seconds:0>2} --> " + \
            f"{int(hours / 24)} days and {(hours % 24):0>2}:{minutes:0>2}:{seconds:0>2}"
 
+
 def decimal_duration_to_time_hh_mm_ss(duration):
     hours = int(int(duration) / 60)
     minutes = int(duration) % 60
     seconds = int((duration - int(duration)) * 60)
     return f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
 
-def save_plot(_to_pdf=0, _pdf_p=None, _plt_p=plt, _file_name='', _pdf_msg=''):
+
+def save_plot(_pdf_p=None, _plt_p=plt, _file_name='', _pdf_msg=''):
     if not os.path.exists('plots'):
         os.makedirs('plots')
     #
-    if _to_pdf:
+    if _pdf_p is not None:
         _pdf_p.savefig(bbox_inches='tight', dpi=300, pad_inches=0.3)  # Save the current plot to the PDF
         _plt_p.close()
         return f"{_pdf_msg:<35}" + " was added to pdf"
@@ -37,6 +40,7 @@ def save_plot(_to_pdf=0, _pdf_p=None, _plt_p=plt, _file_name='', _pdf_msg=''):
         _plt_p.close()
         _file_name += "'"
         return f"plot '{_file_name:<60} was saved to {os.getcwd()}\plots"
+
 
 class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
     # def __init__(self, pdf=0):
@@ -141,11 +145,10 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         yearly_attr_df = pd.DataFrame(data, columns=['year', _attribute])
         return yearly_attr_df
 
-    def plot_per_every_year_attribute(self, plot_save_format='jpg', _attribute='Distance', _to_pdf=0, pdf_p=None):
+    def plot_per_every_year_attribute(self, plot_save_format='jpg', _attribute='Distance', pdf_p=None):
         """
         :param plot_save_format: plot file type: png, pdf, jpg, svg
         :return: plot file name and current directory
-        :param _to_pdf: save the plot to a pdf file or as .jpg plot.
         :param pdf_p:   pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
         :return: string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
@@ -166,14 +169,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             ax.text(i, value + 0.2, str(attr_df[_attribute][i]), ha='center', va='bottom', rotation=25)
         # Show the plot
         # plt.show() # block=False)
-        if not os.path.exists('plots'):
-            os.makedirs('plots')
         #
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         #
         pdf_msg = f"'yearly_" + _attribute.lower() + f"_histogram_plot'"
         file_name = 'yearly_' + _attribute.lower() + f'_histogram_plot_{plot_date}.{plot_save_format}'
-        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
+        return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def per_year_duration(self, _year):
         """
@@ -190,7 +191,8 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         now = int(datetime.datetime.now().strftime('%Y'))
         yearly_duration = []
         while curr_year <= now:
-            year_duration = self.df[self.df["start_time"].str.contains(str(curr_year))][["duration_decimal"]].astype(float)
+            year_duration = self.df[self.df["start_time"].str.contains(str(curr_year))][["duration_decimal"]].astype(
+                float)
             # yearly_running_duration = decimal_to_time(year_duration['duration_decimal'].sum() * 60000)
             total_duration = year_duration['duration_decimal'].sum()
             total_duration_dec = float('%.2f' % year_duration['duration_decimal'].sum())
@@ -198,11 +200,10 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             curr_year += 1
         return yearly_duration
 
-    def plot_per_every_year_duration(self, plot_save_format='jpg', _to_pdf=0, pdf_p=None):
+    def plot_per_every_year_duration(self, plot_save_format='jpg', pdf_p=None):
         """
         :param plot_save_format: plot file type: png, pdf, jpg, svg
         :return: plot file name and current directory
-        :param _to_pdf: save the plot to a pdf file or as .jpg plot.
         :param pdf_p:   pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
         :return: string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
@@ -219,13 +220,11 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             ax.text(i, value + 0.2, str(duration_df['duration_str'][i]), ha='center', va='bottom', rotation=25)
         # Show the plot
         # plt.show() # block=False)
-        if not os.path.exists('plots'):
-            os.makedirs('plots')
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         #
         pdf_msg = f"'yearly_duration_histogram_plot'"
         file_name = f'yearly_duration_histogram_plot_{plot_date}.{plot_save_format}'
-        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
+        return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def total_duration(self):
         total_duration = self.df[["duration_decimal"]].astype(float)['duration_decimal'].sum()
@@ -243,7 +242,43 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                     year_distance['distance'].sum() / (year_duration['duration_decimal'].sum() / 60))
         else:
             average_speed_km_h = '00.00'
-        return average_speed_km_h
+        return float(average_speed_km_h)
+
+    def per_every_year_speed(self, _start_year=2014):
+        curr_year = int(_start_year)
+        now = int(datetime.datetime.now().strftime('%Y'))
+        yearly_speed = []
+        while curr_year <= now:
+            yearly_speed.append([curr_year, self.per_year_speed(curr_year)])
+            curr_year += 1
+        return yearly_speed
+
+    def plot_per_every_year_speed(self, plot_save_format='jpg', pdf_p=None):
+        """
+        :param plot_save_format: plot file type: png, pdf, jpg, svg
+        :return: plot file name and current directory
+        :param pdf_p:   pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
+        :return: string of file name and path, 'added to pdf', or error if attribute is not in dataframe
+        """
+        speed_list = self.per_every_year_speed()
+        speed_df = pd.DataFrame(speed_list, columns=['year', 'Speed'])
+        # data plot
+        ax = speed_df.plot(x='year', y='Speed', alpha=0.9, kind='bar', color='#fc9100', label='[km/h]')
+        # labels and title
+        plt.xlabel('Year')
+        plt.ylabel('Speed [km/h]')
+        # plt.yticks([])
+        plt.title('Running Speed per Year')
+        for i, value in enumerate(speed_df['Speed']):
+            ax.text(i, value + 0.2, str(speed_df['Speed'][i]), ha='center', va='bottom', rotation=25)
+        # Show the plot
+        # plt.show() # block=False)
+        plt.ylim(0, max(speed_df['Speed']) + 2.5)
+        plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
+        #
+        pdf_msg = f"'yearly_speed_histogram_plot'"
+        file_name = f'yearly_speed_histogram_plot_{plot_date}.{plot_save_format}'
+        return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def per_year_pace(self, _year):
         """
@@ -268,105 +303,97 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         total_calories = year_calories['calories'].sum()
         return total_calories
 
-    def per_year_best_10k_list(self, _year, _num_of_runs):
-        year_best_10ks = self.df[(self.df["start_time"].str.contains(str(_year))) &
-                                 (self.df["distance"].astype(float) > 10)]
-        year_best_10ks = year_best_10ks[["duration_decimal"]].astype(float)["duration_decimal"]
-        year_best_10ks = year_best_10ks.nsmallest(_num_of_runs)
-        year_best_10ks_list = list(year_best_10ks.reset_index()['duration_decimal'])
-        temp = len(year_best_10ks_list)
+    def per_year_fastest_10k_list(self, _year, _num_of_runs):
+        year_fastest_10ks = self.df[(self.df["start_time"].str.contains(str(_year))) &
+                                    (self.df["distance"].astype(float) > 10)]
+        year_fastest_10ks = year_fastest_10ks[["duration_decimal"]].astype(float)["duration_decimal"]
+        year_fastest_10ks = year_fastest_10ks.nsmallest(_num_of_runs)
+        year_fastest_10ks_list = list(year_fastest_10ks.reset_index()['duration_decimal'])
+        temp = len(year_fastest_10ks_list)
         for i in range(_num_of_runs - temp):
-            year_best_10ks_list.append(0)
-        for i in range(len(year_best_10ks_list)):
-            year_best_10k = decimal_to_time(year_best_10ks_list[i] * 60000)
-            if year_best_10k[1] != "0":
-                year_best_10ks_list[i] = year_best_10k[1:]
+            year_fastest_10ks_list.append(0)
+        for i in range(len(year_fastest_10ks_list)):
+            year_fastest_10k = decimal_to_time(year_fastest_10ks_list[i] * 60000)
+            if year_fastest_10k[1] != "0":
+                year_fastest_10ks_list[i] = year_fastest_10k[1:]
             else:
-                year_best_10ks_list[i] = year_best_10k[3:]
-        return year_best_10ks_list
+                year_fastest_10ks_list[i] = year_fastest_10k[3:]
+        return year_fastest_10ks_list
 
-    def per_year_best_running(self, _year, _num_of_runs, running_distance="max_10km_dec"):
+    def per_year_fastest_running(self, _year, _num_of_runs, running_distance="max_10km_dec"):
         """
         :param _year:               str, Ex. '2024'
-        :param _num_of_runs:        int, # of best running results.
+        :param _num_of_runs:        int, # of fastest running results.
         :param running_distance:    type of running: "max_10km_dec", "max_21_1km_dec", "max_42_2km_dec"
         :return: running list of    [str: (hh:)mm:ss, str: yyyy-mm-dd, calories burned: int, start_time_dec: int]
         """
-
-        year_best_runs = self.df[(self.df["start_time"].str.contains(str(_year))) &
-                                 (self.df[running_distance] != 0)]  # can select different distances here
-        year_best_runs = year_best_runs.copy()
-        year_best_runs = year_best_runs[[running_distance, "start_time", 'calories', 'start_time_dec']]
-        year_best_runs = year_best_runs.nsmallest(_num_of_runs, running_distance)
-        year_best_runs[running_distance + '_raw'] = year_best_runs[running_distance]
-        year_best_runs_list = year_best_runs.values.tolist()
-        temp = len(year_best_runs_list)
+        year_fastest_runs = self.df[(self.df["start_time"].str.contains(str(_year))) &
+                                    (self.df[running_distance] != 0)]  # can select different distances here
+        year_fastest_runs = year_fastest_runs.copy()
+        year_fastest_runs = year_fastest_runs[[running_distance, "start_time", 'calories', 'start_time_dec']]
+        year_fastest_runs = year_fastest_runs.nsmallest(_num_of_runs, running_distance)
+        year_fastest_runs[running_distance + '_raw'] = year_fastest_runs[running_distance]
+        year_fastest_runs_list = year_fastest_runs.values.tolist()
+        temp = len(year_fastest_runs_list)
         for i in range(_num_of_runs - temp):
-            year_best_runs_list.append([0, 0, 0, 0, 0])
-        for i in range(len(year_best_runs_list)):
-            if year_best_runs_list[i][0] == 0:
-                year_best_runs_list[i][0] = 'N/A'
-                year_best_runs_list[i][1] = 'N/A'
-                year_best_runs_list[i][2] = 'N/A'
-                year_best_runs_list[i][3] = 'N/A'
-                year_best_runs_list[i][4] = 'N/A'
-            else:
-                year_best_running = decimal_to_time(year_best_runs_list[i][0])
-                if year_best_running[1] != "0":
-                    year_best_runs_list[i][0] = year_best_running[1:]
+            year_fastest_runs_list.append(['N/A', 'N/A', 'N/A', 'N/A', 'N/A'])
+        for i in range(len(year_fastest_runs_list)):
+            if year_fastest_runs_list[i][0] != 'N/A':
+                year_fastest_running = decimal_to_time(year_fastest_runs_list[i][0])
+                if year_fastest_running[1] != "0":
+                    year_fastest_runs_list[i][0] = year_fastest_running[1:]
                 else:
-                    year_best_runs_list[i][0] = year_best_running[3:]
-                year_best_runs_list[i][1] = year_best_runs_list[i][1][:10]
-        return year_best_runs_list
+                    year_fastest_runs_list[i][0] = year_fastest_running[3:]
+                year_fastest_runs_list[i][1] = year_fastest_runs_list[i][1][:10]
+        return year_fastest_runs_list
 
-    def per_every_year_best_running(self, _start_year="2014", _num_of_runs=3, running_distance="max_10km_dec"):
+    def per_every_year_fastest_running(self, _start_year="2014", _num_of_runs=3, running_distance="max_10km_dec"):
         """
         :param _start_year:         default to '2014'
-        :param _num_of_runs:        int, # of best running results.
+        :param _num_of_runs:        int, # of fastest running results.
         :param running_distance:    type of running: "max_10km_dec", "max_21_1km_dec", "max_42_2km_dec"
-        :return: running list of    list of best running scores of each year
+        :return: running list of    list of fastest running scores of each year
         """
         curr_year = int(_start_year)
         now = int(datetime.datetime.now().strftime('%Y'))
-        every_year_best_runs_list = []
+        every_year_fastest_runs_list = []
         while curr_year <= now:
-            every_year_best_runs_list += self.per_year_best_running(_year=curr_year,
-                                                                    _num_of_runs=_num_of_runs,
-                                                                    running_distance=running_distance)
+            every_year_fastest_runs_list += self.per_year_fastest_running(_year=curr_year, _num_of_runs=_num_of_runs,
+                                                                          running_distance=running_distance)
             curr_year += 1
-        # print(every_year_best_runs_list)
-        return every_year_best_runs_list
+        # print(every_year_fastest_runs_list)
+        return every_year_fastest_runs_list
 
-    def plot_per_year_best_running(self, start_year="2014", _num_of_runs=3
-                                   , running_distance="max_10km_dec", plot_save_format='jpg', _to_pdf=0, pdf_p=None):
+    def plot_per_year_fastest_running(self, start_year="2014", _num_of_runs=3,
+                                      running_distance="max_10km_dec", plot_save_format='jpg', pdf_p=None):
         """
         :param start_year:          default to '2014'
-        :param _num_of_runs:        int, # of best running results.
+        :param _num_of_runs:        int, # of fastest running results.
         :param running_distance:    type of running: "max_10km_dec", "max_21_1km_dec", "max_42_2km_dec"
         :param plot_save_format:    plot file type: png, pdf, jpg, svg
-        :param _to_pdf: save the plot to a pdf file or as .jpg plot.
         :param pdf_p:   pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
         :return: string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
         if '21' in running_distance:
-            run, units, color = '21.1Km', '[hh:mm:ss]', '#0cef24'   # https://htmlcolorcodes.com/
+            run, units, color = '21.1Km', '[hh:mm:ss]', '#0cef24'  # https://htmlcolorcodes.com/
         elif '42' in running_distance:
             run, units, color = '42.2Km', '[hh:mm:ss]', '#2ac4c4'
         else:
             run, units, color = '10Km', '[mm:ss]', 'skyblue'
-        best_running_df = pd.DataFrame(self.per_every_year_best_running(_start_year=start_year,
-                                                                        _num_of_runs=_num_of_runs,
-                                                                        running_distance=running_distance),
-                                       columns=["Duration", "Date", 'calories', 'start_time_dec', "Duration_raw"])
-        best_running_df = best_running_df.replace('N/A', pd.NA).dropna(subset=["Duration"]).reset_index()
-        best_running_df = best_running_df.drop('index', axis=1)
-        best_running_df['Date'] = pd.to_datetime(best_running_df['Date'], format='%Y-%m-%d', errors='coerce')
-        best_running_df['start_time'] = (best_running_df['start_time_dec'] / 1000) + 7200   # adjust to ISR time
-        best_running_df['start_time'] = pd.to_datetime(best_running_df['start_time'], unit='s')
-        best_running_df = best_running_df.sort_values(by='start_time_dec')
-        best_running_df = best_running_df.dropna(subset=['Date'])
-        ax = best_running_df.plot(x='start_time', y='Duration_raw', kind='bar',
-                                  color=color, figsize=(max((len(best_running_df) + 1)//2, 4), 6), label="Duration")
+        fastest_running_df = pd.DataFrame(self.per_every_year_fastest_running(_start_year=start_year,
+                                                                              _num_of_runs=_num_of_runs,
+                                                                              running_distance=running_distance),
+                                          columns=["Duration", "Date", 'calories', 'start_time_dec', "Duration_raw"])
+        fastest_running_df = fastest_running_df.replace('N/A', pd.NA).dropna(subset=["Duration"]).reset_index()
+        fastest_running_df = fastest_running_df.drop('index', axis=1)
+        fastest_running_df['Date'] = pd.to_datetime(fastest_running_df['Date'], format='%Y-%m-%d', errors='coerce')
+        fastest_running_df['start_time'] = (fastest_running_df['start_time_dec'] / 1000) + 7200  # adjust to ISR time
+        fastest_running_df['start_time'] = pd.to_datetime(fastest_running_df['start_time'], unit='s')
+        fastest_running_df = fastest_running_df.sort_values(by='start_time_dec')
+        fastest_running_df = fastest_running_df.dropna(subset=['Date'])
+        ax = fastest_running_df.plot(x='start_time', y='Duration_raw', kind='bar',
+                                     color=color, figsize=(max((len(fastest_running_df) + 1) // 2, 4), 6),
+                                     label="Duration")
         #
         plt.yticks([])
         plt.xticks(rotation=90)
@@ -378,18 +405,16 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             n = 3
         else:
             n = 0
-        for i, value in enumerate(best_running_df['Duration_raw']):
+        for i, value in enumerate(fastest_running_df['Duration_raw']):
             ax.text(i, value - 0.2, str(decimal_to_time(value))[n:], ha='center', va='bottom', rotation=65)
         # Manually set y-limits
-        plt.ylim(min(best_running_df['Duration_raw']) - 350000, max(best_running_df['Duration_raw']) + 470000)
+        plt.ylim(min(fastest_running_df['Duration_raw']) - 350000, max(fastest_running_df['Duration_raw']) + 470000)
         # plt.show()
-        if not os.path.exists('plots'):
-            os.makedirs('plots')
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         #
-        pdf_msg = f"'best_{run}_histogram_plot'"
-        file_name = f'best_{run}_histogram_plot_{plot_date}.{plot_save_format}'
-        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
+        pdf_msg = f"'fastest_{run}_histogram_plot'"
+        file_name = f'fastest_{run}_histogram_plot_{plot_date}.{plot_save_format}'
+        return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def per_year_longest_running(self, _year, _num_of_runs):
         """
@@ -403,15 +428,6 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         year_longest_runs = year_longest_runs[["distance", "start_time", 'start_time_dec']]
         year_longest_runs = year_longest_runs.nlargest(_num_of_runs, "distance")
         year_longest_runs_list = year_longest_runs.values.tolist()
-        temp = len(year_longest_runs_list)
-        # for i in range(_num_of_runs - temp):
-        #     year_longest_runs_list.append([0, 0])
-        # for i in range(len(year_longest_runs_list)):
-        #     if year_longest_runs_list[i][0] == 0:
-        #         year_longest_runs_list[i][0] = 'N/A'
-        #         year_longest_runs_list[i][1] = 'N/A'
-        #     else:
-        #         year_longest_runs_list[i][1] = year_longest_runs_list[i][1][:10]
         return year_longest_runs_list
 
     def per_every_year_longest_running(self, _start_year="2014", _num_of_runs=3):
@@ -424,7 +440,14 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         return every_year_longest_runs_list
 
     def plot_per_every_year_longest_running(self, _start_year="2014", _num_of_runs=3,
-                                            plot_save_format='jpg', _to_pdf=0, pdf_p=None):
+                                            plot_save_format='jpg', pdf_p=None):
+        """
+        :param _start_year:         str, Ex. '2024'
+        :param _num_of_runs:        int
+        :param plot_save_format:    plot file type: png, pdf, jpg, svg
+        :param pdf_p:        pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
+        :return:             string of file name and path, 'added to pdf', or error if attribute is not in dataframe
+        """
         longest_runs_list = self.per_every_year_longest_running(_start_year=_start_year, _num_of_runs=_num_of_runs)
         longest_runs_df = pd.DataFrame(longest_runs_list, columns=["Distance", "start_time", 'start_time_dec'])
         longest_runs_df['Distance'] = longest_runs_df['Distance'].astype(float).round(2)
@@ -435,32 +458,36 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                                   figsize=(max((len(longest_runs_df) + 1) // 2, 4), 6), label='Distance [Km]')
         plt.xlabel('Year')
         plt.ylabel('Distance')
-        # plt.xticks(longest_runs_df['start_time_dec'], longest_runs_df['start_time'])
+        plt.title(f'Longest running activities per every Year')
         for i, value in enumerate(longest_runs_df['Distance']):
             ax.text(i, value + 0.2, str(value), ha='center', va='bottom', rotation=25)
         # plt.show()
-        if not os.path.exists('plots'):
-            os.makedirs('plots')
         plot_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         #
         pdf_msg = f"'longest_running_histogram_plot'"
         file_name = f'longest_running_histogram_plot_{plot_date}.{plot_save_format}'
-        return save_plot(_to_pdf=_to_pdf, _pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
+        return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
     def save_plot_to_pdf(self):
+        """
+        Generated pdf document with all available plots
+        :return: success/fail message
+        """
         pdf_date = datetime.datetime.now().strftime('%Y-%m-%d_T_%H_%M_%S')
         if PDF_SAVE:
             with PdfPages(f'plots/analysis_plots_{pdf_date}.pdf') as pdf:
-                print(self.plot_per_every_year_attribute(_attribute='Distance', _to_pdf=1, pdf_p=pdf))
-                print(self.plot_per_every_year_attribute(_attribute='calories', _to_pdf=1, pdf_p=pdf))
-                print(self.plot_per_every_year_duration(_to_pdf=1, pdf_p=pdf))
-                print(self.plot_per_every_year_longest_running(_to_pdf=1, pdf_p=pdf))
-                print(self.plot_per_year_best_running(running_distance="max_10km_dec", _to_pdf=1, pdf_p=pdf))
-                print(self.plot_per_year_best_running(running_distance="max_21_1km_dec", _to_pdf=1, pdf_p=pdf))
-                print(self.plot_per_year_best_running(running_distance="max_42_2km_dec", _to_pdf=1, pdf_p=pdf))
+                print('*', self.plot_per_every_year_attribute(_attribute='Distance', pdf_p=pdf), '*')
+                print('*', self.plot_per_every_year_attribute(_attribute='calories', pdf_p=pdf), '*')
+                print('*', self.plot_per_every_year_duration(pdf_p=pdf), '*')
+                print('*', self.plot_per_every_year_speed(pdf_p=pdf), '*')
+                print('*', self.plot_per_every_year_longest_running(pdf_p=pdf), '*')
+                print('*', self.plot_per_year_fastest_running(running_distance="max_10km_dec", pdf_p=pdf), '*')
+                print('*', self.plot_per_year_fastest_running(running_distance="max_21_1km_dec", pdf_p=pdf), '*')
+                print('*', self.plot_per_year_fastest_running(running_distance="max_42_2km_dec", pdf_p=pdf), '*')
             return f"Document 'analysis_plots_{pdf_date}.pdf' was saved to {os.getcwd()}\plots"
         else:
             return f"Saving plots to pdf is disabled"
+
 
 if __name__ == "__main__":
     test = runtastic_data_filter(_files_path=PATH, _output_path=OUTPUT_DIR_LOCATION)
@@ -475,22 +502,22 @@ if __name__ == "__main__":
     print(f"Total Duration: {test.total_duration()} mm:ss")
     print("*" * 60)
 
-    X = test.per_year_best_running("2024", 5)
+    X = test.per_year_fastest_running("2024", 5)
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) duration: {item[0]:^7} @ {item[1]:^12}")
     print("*" * 60)
 
-    X = test.per_year_best_running("2023", 3, "max_21_1km_dec")
+    X = test.per_year_fastest_running("2023", 3, "max_21_1km_dec")
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) duration: {item[0]:^7} @ {item[1]:^12}")
     print("*" * 60)
 
-    X = test.per_year_best_running("2024", 3, "max_42_2km_dec")
+    X = test.per_year_fastest_running("2024", 3, "max_42_2km_dec")
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) duration: {item[0]:^7} @ {item[1]:^12}, Calories burned: {item[2]:^6}")
     print("*" * 60)
 
-    X = test.per_every_year_best_running()
+    X = test.per_every_year_fastest_running()
     for i, item in enumerate(X):
         print(f"{i + 1:0>2}) duration: {item[0]:^7} @ {item[1]:^12}, Calories burned: {item[2]:^6}")
     print("*" * 60)
@@ -511,17 +538,11 @@ if __name__ == "__main__":
     print(test.plot_per_every_year_attribute(_attribute='Distance'))
     print(test.plot_per_every_year_attribute(_attribute='calories'))
     print(test.plot_per_every_year_duration())
-    print(test.plot_per_year_best_running(running_distance="max_10km_dec"))
-    print(test.plot_per_year_best_running(running_distance="max_21_1km_dec"))
-    print(test.plot_per_year_best_running(running_distance="max_42_2km_dec"))
+    print(test.plot_per_every_year_speed())
+    print(test.plot_per_year_fastest_running(running_distance="max_10km_dec"))
+    print(test.plot_per_year_fastest_running(running_distance="max_21_1km_dec"))
+    print(test.plot_per_year_fastest_running(running_distance="max_42_2km_dec"))
     print(test.plot_per_every_year_longest_running())
     print(test.save_plot_to_pdf())
     # print(float('00.00'))
-
-
-
-
-
-
-
 
