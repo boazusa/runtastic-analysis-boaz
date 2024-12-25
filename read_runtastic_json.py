@@ -6,7 +6,8 @@ from os import listdir
 from os.path import isfile, join, isdir
 import pandas as pd
 import datetime
-from read_single_runtastic_json import read_runtastic_json
+
+# from read_single_runtastic_json import read_runtastic_json
 
 """
 Debug mode:
@@ -32,7 +33,8 @@ json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_ne
 def decimal_to_time(_decimal_time):
     hours = int(floor(_decimal_time / 60000) / 60)
     minutes = floor(_decimal_time / 60000) % 60
-    seconds = floor(((_decimal_time / 60000) - int(_decimal_time / 60000)) * 60) # int(_decimal_time / 60000) == _decimal_time // 60000
+    seconds = floor(((_decimal_time / 60000) - int(
+        _decimal_time / 60000)) * 60)  # int(_decimal_time / 60000) == _decimal_time // 60000
     return f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
 
 
@@ -46,7 +48,7 @@ class Runtastic_Data_To_Csv:
         self.num_of_running_files = 0
         self.sport_type_id = '0'
         self.date = '0'
-        self.start_time = '0'       # TODO add numeric value column for plots
+        self.start_time = '0'  # TODO add numeric value column for plots
         self.start_time_dec = 0
         self.end_time = '0'
         self.duration = '0'
@@ -73,6 +75,7 @@ class Runtastic_Data_To_Csv:
         self.fastest_42_2km_date = ''
         self.max_heart_rate = '0'
         self.ave_heart_rate = '0'
+        self.json_data_content = {}
         #
         self.export_dict = {}
         self.excel_columns = ['start_time', 'end_time', 'duration_decimal', 'duration', 'distance', 'average_pace',
@@ -102,7 +105,7 @@ class Runtastic_Data_To_Csv:
         self.fastest_speed = 0
         self.yearly_top_scores = {}
         self.yearly_top_scores_columns = ["year", "yearly running distance", "yearly running duration",
-                                          "average speed [Km/h]" , "average pace [min/Km]",
+                                          "average speed [Km/h]", "average pace [min/Km]",
                                           "fastest 10Km 1", "fastest 10Km 2", "fastest 10Km 3",
                                           "Longest run 1", "Longest run 2", "Longest run 3", "Best 21.1"]
         for element in self.yearly_top_scores_columns:
@@ -154,7 +157,7 @@ class Runtastic_Data_To_Csv:
         duration_h = int(floor(self.json_data_content["duration"] / 60000) / 60)
         duration_min = floor(self.json_data_content["duration"] / 60000) % 60
         duration_sec = floor(
-                (self.json_data_content["duration"] / 60000 - floor(self.json_data_content["duration"] / 60000)) * 60)
+            (self.json_data_content["duration"] / 60000 - floor(self.json_data_content["duration"] / 60000)) * 60)
         self.duration = f"{duration_h:0>2}:{duration_min:0>2}:{duration_sec:0>2}"
         self.calories = f'{self.json_data_content["calories"]}'
 
@@ -164,7 +167,7 @@ class Runtastic_Data_To_Csv:
                 duration_h = int(floor(dicts["attributes"]["duration"] / 60000) / 60)
                 duration_min = floor(dicts["attributes"]["duration"] / 60000) % 60
                 duration_sec = floor(
-                        (dicts["attributes"]["duration"] / 60000 - floor(dicts["attributes"]["duration"] / 60000)) * 60)
+                    (dicts["attributes"]["duration"] / 60000 - floor(dicts["attributes"]["duration"] / 60000)) * 60)
                 self.duration_2 = f"{duration_h:0>2}:{duration_min:0>2}:{duration_sec:0>2}"
                 if "distance" in dicts["attributes"]:
                     self.distance = f'{dicts["attributes"]["distance"] / 1000}'
@@ -197,7 +200,7 @@ class Runtastic_Data_To_Csv:
                         self.max_1km = decimal_to_time(top_speed["duration"])
                     if "5km" in top_speed["distance"]:
                         self.max_5km = decimal_to_time(top_speed["duration"])
-                    if "10km" in top_speed["distance"]: # if top_speed["distance"] == "10km":
+                    if "10km" in top_speed["distance"]:  # if top_speed["distance"] == "10km":
                         if top_speed["duration"] < self.fastest_max_10km:
                             self.fastest_max_10km = top_speed["duration"]
                             self.fastest_10km_date = self.date
@@ -215,7 +218,6 @@ class Runtastic_Data_To_Csv:
                             self.fastest_42_2km_date = self.date
                         self.max_42_2km = decimal_to_time(top_speed["duration"])
                         self.max_42_2km_dec = top_speed["duration"]
-
 
     def append_data_to_dict(self):
         if self.distance != "0":
@@ -268,9 +270,9 @@ class Runtastic_Data_To_Csv:
             minutes = floor(total_duration) % 60
             seconds = floor((total_duration - int(total_duration)) * 60)
             print(f"Total duration: \t\t{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
-            print(f"Total average pace: \t{'%.2f' % (60*(sum(distance_float)/sum(duration_decimal))):>5}")
+            print(f"Total average pace: \t{'%.2f' % (60 * (sum(distance_float) / sum(duration_decimal))):>5}")
             # print(f"Total average speed:\t{'%.2f' % (sum(duration_decimal)/sum(distance_float)):>5}")
-            ave_speed_dec = (sum(duration_decimal)/sum(distance_float))
+            ave_speed_dec = (sum(duration_decimal) / sum(distance_float))
             minutes = int(ave_speed_dec)
             seconds = '%2.0f' % ((ave_speed_dec % minutes) * 60)
             print(f"Total average speed:\t{minutes :>2}:{seconds :0>2}")
@@ -319,7 +321,7 @@ class Runtastic_Data_To_Csv:
         self.date_for_file = now.strftime('%Y-%m-%d_T_%H_%M_%S')
         export_df = pd.DataFrame(self.export_dict, columns=self.excel_columns)
         export_df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv',
-                       index=False, header=True)
+                         index=False, header=True)
         # print("=====", self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv')
         print("Number of 'running' files =", f'{self.num_of_running_files:^18}')
         print("Generated Runtastic CSV path:\t", self.output_path[:-1] + self.date_for_folder +
@@ -417,8 +419,10 @@ class Runtastic_Data_To_Csv:
             self.yearly_running_duration = decimal_to_time(year_duration['duration_decimal'].sum() * 60000)
             self.yearly_running_duration_decimal = year_duration['duration_decimal'].sum()
             if year_duration['duration_decimal'].sum() != 0 or year_distance['distance'].sum() != 0:
-                self.average_speed_Km_h = '%.2f' % (year_distance['distance'].sum() / (year_duration['duration_decimal'].sum() / 60))
-                self.average_pace_min_Km = decimal_to_time((year_duration['duration_decimal'].sum() / year_distance['distance'].sum()) * 60000)[3:]
+                self.average_speed_Km_h = '%.2f' % (
+                            year_distance['distance'].sum() / (year_duration['duration_decimal'].sum() / 60))
+                self.average_pace_min_Km = decimal_to_time(
+                    (year_duration['duration_decimal'].sum() / year_distance['distance'].sum()) * 60000)[3:]
             else:
                 self.average_speed_Km_h = '00.00'
                 self.average_pace_min_Km = '00:00:00'[3:]
@@ -481,7 +485,8 @@ class Runtastic_Data_To_Csv:
         # pandas: get rows based on index values
         print(self.df.loc[ind_val])  # [["start_time", "distance"]])
         # pandas: to deleted column from dataframe
-        z = self.df.loc[ind_val].reset_index().drop('index', axis=1)
+        df_w_deleted_col = self.df.loc[ind_val].reset_index().drop('index', axis=1)
+        print(df_w_deleted_col)
         longest_run = self.df[self.df["start_time"].str.contains('2024')][["distance"]].astype(float)["distance"].max()
         print("longest_run:", longest_run)
         print('^' * 100)
@@ -496,9 +501,9 @@ class Runtastic_Data_To_Csv:
         self.date_for_file = now.strftime('%Y-%m-%d_T_%H_%M_%S')
         year_summary_df = pd.DataFrame(self.yearly_top_scores, columns=self.yearly_top_scores_columns)
         if transpose == 1:
-            year_summary_df = year_summary_df.transpose().reset_index()     # transpose table columns-rows
+            year_summary_df = year_summary_df.transpose().reset_index()  # transpose table columns-rows
         year_summary_df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file +
-                                    '_Runtastic_year_summary_Boaz.csv', index=False, header=True)
+                               '_Runtastic_year_summary_Boaz.csv', index=False, header=True)
         print("Generated Runtastic CSV path:\t", self.output_path[:-1] + self.date_for_folder +
               '\nCSV File Name:\t\t\t\t\t', self.date_for_file + '_Runtastic_year_summary_Boaz.csv')
         print(120 * '-')
@@ -535,7 +540,7 @@ class Runtastic_Data_To_Csv:
             hours = int(floor(total_duration_dec) / 60)
             minutes = floor(total_duration_dec) % 60
             seconds = floor((total_duration_dec - int(total_duration_dec)) * 60)
-            total_duration_time = f"{int(hours/24)} days and {(hours % 24):0>2}:{minutes:0>2}:{seconds:0>2} --> " + \
+            total_duration_time = f"{int(hours / 24)} days and {(hours % 24):0>2}:{minutes:0>2}:{seconds:0>2} --> " + \
                                   f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
             average_pace = f"{'%.2f' % (60 * (sum(distance_float) / sum(duration_decimal))):>5}"
             ave_speed_dec = (sum(duration_decimal) / sum(distance_float))
@@ -547,12 +552,12 @@ class Runtastic_Data_To_Csv:
             fastest_max_42_2km_time = decimal_to_time(self.fastest_max_42_2km)
             #
             return f"Total distance: \t\t{'%.2f' % (sum(distance_float)):>5} Km\n" \
-                   + f"Total duration: \t\t{total_duration_time}\n"\
-                   + f"Total average pace: \t{average_pace} Km/h\n"\
-                   + f"Total average speed:\t{average_speed} min/Km\n"\
-                   + f"{'  Fastest runs:  ':*^45}\n"\
-                   + f"Fastest 10Km:\t\t\t{fastest_max_10km_time} @ {self.fastest_10km_date}\n"\
-                   + f"Fastest 21.1Km:\t\t\t{fastest_max_21_1km_time} @ {self.fastest_21_1km_date}\n"\
+                   + f"Total duration: \t\t{total_duration_time}\n" \
+                   + f"Total average pace: \t{average_pace} Km/h\n" \
+                   + f"Total average speed:\t{average_speed} min/Km\n" \
+                   + f"{'  Fastest runs:  ':*^45}\n" \
+                   + f"Fastest 10Km:\t\t\t{fastest_max_10km_time} @ {self.fastest_10km_date}\n" \
+                   + f"Fastest 21.1Km:\t\t\t{fastest_max_21_1km_time} @ {self.fastest_21_1km_date}\n" \
                    + f"Fastest 42.2Km:\t\t\t{fastest_max_42_2km_time} @ {self.fastest_42_2km_date}\n" \
                    + f"{45 * '*'}"
         else:
@@ -569,7 +574,3 @@ if __name__ == "__main__":
     print(analyze_data)
 
     # read_runtastic_json(json_file)
-
-
-
-
