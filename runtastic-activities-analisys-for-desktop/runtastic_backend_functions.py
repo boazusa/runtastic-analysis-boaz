@@ -6,6 +6,7 @@ import read_runtastic_json
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+print("*** Current working directory:", os.getcwd())
 decimal_to_time = read_runtastic_json.decimal_to_time
 PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20241103-000\Sport-sessions\\'
 OUTPUT_DIR_LOCATION = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Excel_and_CSV_new\\'  # _output_path
