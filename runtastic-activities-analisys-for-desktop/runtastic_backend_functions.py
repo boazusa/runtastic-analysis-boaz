@@ -6,7 +6,8 @@ import read_runtastic_json
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-print("*** Current working directory:", os.getcwd())
+print("Current script directory:", os.path.dirname(os.path.abspath(__file__)))
+print("Current working directory:", os.getcwd())
 decimal_to_time = read_runtastic_json.decimal_to_time
 PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20241103-000\Sport-sessions\\'
 OUTPUT_DIR_LOCATION = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Excel_and_CSV_new\\'  # _output_path
@@ -395,7 +396,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         longest_runs_df = longest_runs_df.sort_values(by='start_time_dec')
         ax = longest_runs_df.plot(x='start_time', y='Distance', alpha=0.9, kind='bar', color='#ba03bd',
                                   figsize=(max((len(longest_runs_df) + 1) // 2, 4), 6), label='Distance [Km]')
-        plt.xlabel('Year')
+        plt.xlabel('Date')
         plt.ylabel('Distance')
         plt.title(f'Longest {_num_of_runs} running activities per every Year')
         for i, value in enumerate(longest_runs_df['Distance']):
@@ -415,8 +416,8 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             with PdfPages(f'plots/analysis_plots_{pdf_date}.pdf') as pdf:
                 print('***', self.plot_per_every_year_attribute(_attribute='Distance', pdf_p=pdf), '***')
                 print('***', self.plot_per_every_year_attribute(_attribute='Calories', pdf_p=pdf), '***')
-                print('***', self.plot_per_every_year_attribute(_attribute='Speed', pdf_p=pdf), '***')
                 print('***', self.plot_per_every_year_duration(pdf_p=pdf), '***')
+                print('***', self.plot_per_every_year_attribute(_attribute='Speed', pdf_p=pdf), '***')
                 print('***', self.plot_per_every_year_longest_running(pdf_p=pdf), '***')
                 print('***', self.plot_per_year_fastest_running(running_distance="max_10km_dec", pdf_p=pdf), '***')
                 print('***', self.plot_per_year_fastest_running(running_distance="max_21_1km_dec", pdf_p=pdf), '***')

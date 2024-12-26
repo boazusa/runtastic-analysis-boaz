@@ -48,7 +48,7 @@ class Runtastic_Data_To_Csv:
         self.num_of_running_files = 0
         self.sport_type_id = '0'
         self.date = '0'
-        self.start_time = '0'  # TODO add numeric value column for plots
+        self.start_time = '0'
         self.start_time_dec = 0
         self.end_time = '0'
         self.duration = '0'
@@ -196,6 +196,7 @@ class Runtastic_Data_To_Csv:
         for dicts in self.json_data_content["features"]:
             if "type" in dicts and "fastest_segments" in dicts['type']:
                 for top_speed in dicts["attributes"]["segments"]:
+                    # TODO, change method; check for dicts["attributes"]["segments"] len and pattern
                     if top_speed["distance"] == "1km":
                         self.max_1km = decimal_to_time(top_speed["duration"])
                     if "5km" in top_speed["distance"]:
@@ -508,7 +509,6 @@ class Runtastic_Data_To_Csv:
               '\nCSV File Name:\t\t\t\t\t', self.date_for_file + '_Runtastic_year_summary_Boaz.csv')
         print(120 * '-')
 
-    # TODO continue creating functions for all yearly parameters
     # def per_year_distance(self, _year):
     #     year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
     #     total_running_km = year_distance['distance'].sum()
