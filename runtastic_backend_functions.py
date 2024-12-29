@@ -477,8 +477,8 @@ if __name__ == "__main__":
     # plots
     print(test.plot_per_every_year_attribute(_attribute='Distance'))
     print(test.plot_per_every_year_attribute(_attribute='calories'))
-    print(test.plot_per_every_year_attribute(_attribute='Speed'))
     print(test.plot_per_every_year_duration())
+    print(test.plot_per_every_year_attribute(_attribute='Speed'))
     print(test.plot_per_year_fastest_running(running_distance="max_10km_dec"))
     print(test.plot_per_year_fastest_running(running_distance="max_21_1km_dec"))
     print(test.plot_per_year_fastest_running(running_distance="max_42_2km_dec"))
