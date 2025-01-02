@@ -47,6 +47,7 @@ class Runtastic_Data_To_Csv:
         self.date_for_file = ""
         self.num_of_running_files = 0
         self.sport_type_id = '0'
+        self.last_activity_date = 'N/A'
         self.date = '0'
         self.start_time = '0'
         self.start_time_dec = 0
@@ -262,6 +263,7 @@ class Runtastic_Data_To_Csv:
                     print("*" * 30 + f"{file: ^73}" + 30 * "*")
                 if DEBUG == 2:
                     print(self.print_data(file))
+        self.last_activity_date = self.date     # get the date of the last aactivity
         if DEBUG == 3:
             distance_float = [float(x) for x in self.export_dict['distance']]
             duration_decimal = [float(y) for y in self.export_dict['duration_decimal']]

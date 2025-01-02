@@ -55,8 +55,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
 
     def create_main_dataframe(self):
         self.start_time_message()
+
+        # process the activities files into dictionary
         self.get_data()
+        # create Pandas dataframe from the activities files into dictionary
         self.create_raw_dataframe_form_list()
+
         # self.end_time_data_summary_message()
 
     def per_year_distance(self, _year):
@@ -74,7 +78,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         """
         float_distance = self.df[["distance"]].astype(float)
         total_running_km = float_distance['distance'].sum()
-        return '%.2f' % total_running_km
+        return '%.2f' % total_running_km  # f"{total_running_km:.2f}"
 
     def per_year_calories(self, _year):
         """
@@ -258,6 +262,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         year_longest_runs = year_longest_runs[["distance", "start_time", 'start_time_dec']]
         year_longest_runs = year_longest_runs.nlargest(_num_of_runs, "distance")
         year_longest_runs_list = year_longest_runs.values.tolist()
+        year_longest_runs_list.sort(key=lambda x: x[2])
         return year_longest_runs_list
 
     def per_every_year_longest_running(self, _start_year="2014", _num_of_runs=3):
@@ -286,13 +291,23 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             att_ylabel, att_title, att_color = 'Speed [km/h]', 'Running Speed per Year', '#fc9100'
         else:
             att_ylabel, att_title, att_color = 'Distance [km]', 'Running Distance per Year', '#25d0e8'
+
         # data plot
         ax = attr_df.plot(x='year', y=_attribute, alpha=0.9, kind='bar', color=att_color, label=att_ylabel.capitalize())
+
         # labels and title
         plt.xlabel('Year')
         plt.ylim(0, max(attr_df[_attribute]) * 1.225)
         plt.ylabel(att_ylabel)
         plt.title(att_title)
+
+        # add attribute average line
+        if _attribute == 'Speed':
+            speed_mean = attr_df[_attribute][attr_df[_attribute] > 0].mean()
+            speed_str = '%.2f' % speed_mean
+            plt.ylim(0, 16.5)
+            plt.axhline(y=speed_mean, color='#ffcb77', label=f'Ave {_attribute}: {speed_str}', linestyle='--')
+        plt.legend()
 
         for i, value in enumerate(attr_df[_attribute]):
             ax.text(i, value + 0.2, str(attr_df[_attribute][i]), ha='center', va='bottom', rotation=25)
@@ -354,9 +369,8 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         fastest_running_df['start_time'] = pd.to_datetime(fastest_running_df['start_time'], unit='s')
         fastest_running_df = fastest_running_df.sort_values(by='start_time_dec')
         fastest_running_df = fastest_running_df.dropna(subset=['Date'])
-        ax = fastest_running_df.plot(x='start_time', y='Duration_raw', kind='bar',
-                                     color=color, figsize=(max((len(fastest_running_df) + 1) // 2, 4), 6),
-                                     label="Duration")
+        ax = fastest_running_df.plot(x='start_time', y='Duration_raw', kind='bar',  color=color,
+                                     figsize=(max((len(fastest_running_df) + 1) // 2, 4), 6), label="Duration")
         #
         plt.yticks([])
         plt.xticks(rotation=90)
