@@ -27,7 +27,8 @@ PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20241103-0
 OUTPUT_DIR_LOCATION = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Excel_and_CSV_new\\'  # _output_path
 
 # Jerusalem Marathon
-json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2024-03-08_05-01-39-UTC_b0ba3a9b-a1b9-4bc3-b13c-795d5a2b579e.json"
+json_file = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script\2024-03-08_05-01-39-" \
+            r"UTC_b0ba3a9b-a1b9-4bc3-b13c-795d5a2b579e.json"
 
 
 def decimal_to_time(_decimal_time):
@@ -54,6 +55,7 @@ class Runtastic_Data_To_Csv:
         self.end_time = '0'
         self.duration = '0'
         self.duration_decimal = '0'
+        self.duration_decimal_ms = '0'
         self.duration_2 = '0'
         self.calories = '0'
         self.distance = '0'
@@ -84,7 +86,7 @@ class Runtastic_Data_To_Csv:
                               'max_1km', 'max_5km', 'max_10km', 'max_21_1km', 'max_42_2km']
 
         self.excel_columns_raw = self.excel_columns + ['max_10km_dec', 'max_21_1km_dec',
-                                                       'max_42_2km_dec', 'start_time_dec']
+                                                       'max_42_2km_dec', 'start_time_dec', 'duration_decimal_ms']
         for element in self.excel_columns_raw:
             self.export_dict[element] = []
         self.df = pd.DataFrame()
@@ -132,6 +134,7 @@ class Runtastic_Data_To_Csv:
         self.end_time = '0'
         self.duration = '0'
         self.duration_decimal = '0'
+        self.duration_decimal_ms = '0'
         self.duration_2 = '0'
         self.calories = '0'
         self.distance = '0'
@@ -155,6 +158,7 @@ class Runtastic_Data_To_Csv:
         self.start_time_dec = self.json_data_content["start_time"]
         self.end_time = strftime('%Y-%m-%d %H:%M:%S', localtime(self.json_data_content["end_time"] / 1000))
         self.duration_decimal = '%.2f' % (self.json_data_content["duration"] / 60000)
+        self.duration_decimal_ms = self.json_data_content["duration"]
         duration_h = int(floor(self.json_data_content["duration"] / 60000) / 60)
         duration_min = floor(self.json_data_content["duration"] / 60000) % 60
         duration_sec = floor(
@@ -228,6 +232,7 @@ class Runtastic_Data_To_Csv:
             self.export_dict['end_time'].append(self.end_time)
             self.export_dict['duration'].append(self.duration)
             self.export_dict['duration_decimal'].append(self.duration_decimal)
+            self.export_dict['duration_decimal_ms'].append(self.duration_decimal_ms)
             self.export_dict['calories'].append(self.calories)
             self.export_dict['distance'].append(self.distance)
             self.export_dict['max_heart_rate'].append(self.max_heart_rate)
