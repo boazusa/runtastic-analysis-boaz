@@ -55,8 +55,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
 
     def create_main_dataframe(self):
         self.start_time_message()
+
+        # process the activities files into dictionary
         self.get_data()
+        # create Pandas dataframe from the activities files into dictionary
         self.create_raw_dataframe_form_list()
+
         # self.end_time_data_summary_message()
 
     def per_year_distance(self, _year):
@@ -74,7 +78,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         """
         float_distance = self.df[["distance"]].astype(float)
         total_running_km = float_distance['distance'].sum()
-        return '%.2f' % total_running_km
+        return '%.2f' % total_running_km  # f"{total_running_km:.2f}"
 
     def per_year_calories(self, _year):
         """
@@ -113,10 +117,10 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :return: str, average mm:ss per Km in a year
         """
         year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
-        year_duration = self.df[self.df["start_time"].str.contains(str(_year))][["duration_decimal"]].astype(float)
-        if year_duration['duration_decimal'].sum() != 0 or year_distance['distance'].sum() != 0:
+        year_duration = self.df[self.df["start_time"].str.contains(str(_year))][["duration_decimal_ms"]].astype(float)
+        if year_duration['duration_decimal_ms'].sum() != 0 or year_distance['distance'].sum() != 0:
             average_pace_min_km = decimal_to_time(
-                (year_duration['duration_decimal'].sum() / year_distance['distance'].sum()) * 60000)[3:]
+                (year_duration['duration_decimal_ms'].sum() / year_distance['distance'].sum()))[3:]
         else:
             average_pace_min_km = '00:00:00'[3:]
         return average_pace_min_km
@@ -185,22 +189,24 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         total_duration = self.df[["duration_decimal"]].astype(float)['duration_decimal'].sum()
         return decimal_duration_to_time(total_duration)
 
-    def per_year_fastest_10k_list(self, _year, _num_of_runs):
-        year_fastest_10ks = self.df[(self.df["start_time"].str.contains(str(_year))) &
-                                    (self.df["distance"].astype(float) > 10)]
-        year_fastest_10ks = year_fastest_10ks[["duration_decimal"]].astype(float)["duration_decimal"]
-        year_fastest_10ks = year_fastest_10ks.nsmallest(_num_of_runs)
-        year_fastest_10ks_list = list(year_fastest_10ks.reset_index()['duration_decimal'])
-        temp = len(year_fastest_10ks_list)
-        for i in range(_num_of_runs - temp):
-            year_fastest_10ks_list.append(0)
-        for i in range(len(year_fastest_10ks_list)):
-            year_fastest_10k = decimal_to_time(year_fastest_10ks_list[i] * 60000)
-            if year_fastest_10k[1] != "0":
-                year_fastest_10ks_list[i] = year_fastest_10k[1:]
+    def per_year_fastest_42k_list(self, _year, _num_of_runs):
+        year_fastest_42km = self.df[(self.df["start_time"].str.contains(str(_year))) &
+                                    (self.df["distance"].astype(float) > 42)]
+        year_fastest_42km = year_fastest_42km.copy()
+        year_fastest_42km["duration_decimal"] = year_fastest_42km["duration_decimal"].astype(float)
+        year_fastest_42km["duration_raw"] = (year_fastest_42km["duration_decimal_ms"].astype(int))
+        year_fastest_42km = year_fastest_42km[["duration_decimal", "start_time", 'calories',
+                                               'start_time_dec', 'duration_raw']]
+        year_fastest_42km = year_fastest_42km.nsmallest(_num_of_runs, "duration_decimal")
+        # year_fastest_42ks_list = list(year_fastest_42km.reset_index()['duration_decimal'])
+        year_fastest_42ks_list = year_fastest_42km.values.tolist()
+        for i in range(len(year_fastest_42ks_list)):
+            year_fastest_42k = decimal_to_time(year_fastest_42ks_list[i][4])
+            if year_fastest_42k[1] != "0":
+                year_fastest_42ks_list[i][0] = year_fastest_42k[1:]
             else:
-                year_fastest_10ks_list[i] = year_fastest_10k[3:]
-        return year_fastest_10ks_list
+                year_fastest_42ks_list[i][0] = year_fastest_42ks_list[3:]
+        return year_fastest_42ks_list
 
     def per_year_fastest_running(self, _year, _num_of_runs, running_distance="max_10km_dec"):
         """
@@ -239,10 +245,17 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         curr_year = int(_start_year)
         now = int(datetime.datetime.now().strftime('%Y'))
         every_year_fastest_runs_list = []
-        while curr_year <= now:
-            every_year_fastest_runs_list += self.per_year_fastest_running(_year=curr_year, _num_of_runs=_num_of_runs,
-                                                                          running_distance=running_distance)
-            curr_year += 1
+        if running_distance == "max_42_2km_dec":
+            while curr_year <= now:
+                every_year_fastest_runs_list += self.per_year_fastest_42k_list(_year=curr_year,
+                                                                               _num_of_runs=_num_of_runs)
+                curr_year += 1
+        else:
+            while curr_year <= now:
+                every_year_fastest_runs_list += self.per_year_fastest_running(_year=curr_year,
+                                                                              _num_of_runs=_num_of_runs,
+                                                                              running_distance=running_distance)
+                curr_year += 1
         # print(every_year_fastest_runs_list)
         return every_year_fastest_runs_list
 
@@ -258,6 +271,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         year_longest_runs = year_longest_runs[["distance", "start_time", 'start_time_dec']]
         year_longest_runs = year_longest_runs.nlargest(_num_of_runs, "distance")
         year_longest_runs_list = year_longest_runs.values.tolist()
+        year_longest_runs_list.sort(key=lambda x: x[2])
         return year_longest_runs_list
 
     def per_every_year_longest_running(self, _start_year="2014", _num_of_runs=3):
@@ -286,13 +300,23 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             att_ylabel, att_title, att_color = 'Speed [km/h]', 'Running Speed per Year', '#fc9100'
         else:
             att_ylabel, att_title, att_color = 'Distance [km]', 'Running Distance per Year', '#25d0e8'
+
         # data plot
         ax = attr_df.plot(x='year', y=_attribute, alpha=0.9, kind='bar', color=att_color, label=att_ylabel.capitalize())
+
         # labels and title
         plt.xlabel('Year')
         plt.ylim(0, max(attr_df[_attribute]) * 1.225)
         plt.ylabel(att_ylabel)
         plt.title(att_title)
+
+        # add attribute average line
+        if _attribute == 'Speed':
+            speed_mean = attr_df[_attribute][attr_df[_attribute] > 0].mean()
+            speed_str = '%.2f' % speed_mean
+            plt.ylim(0, 16.5)
+            plt.axhline(y=speed_mean, color='#ffcb77', label=f'Ave {_attribute}: {speed_str}', linestyle='--')
+        plt.legend()
 
         for i, value in enumerate(attr_df[_attribute]):
             ax.text(i, value + 0.2, str(attr_df[_attribute][i]), ha='center', va='bottom', rotation=25)
@@ -349,14 +373,14 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                                           columns=["Duration", "Date", 'calories', 'start_time_dec', "Duration_raw"])
         fastest_running_df = fastest_running_df.replace('N/A', pd.NA).dropna(subset=["Duration"]).reset_index()
         fastest_running_df = fastest_running_df.drop('index', axis=1)
-        fastest_running_df['Date'] = pd.to_datetime(fastest_running_df['Date'], format='%Y-%m-%d', errors='coerce')
+        if running_distance != "max_42_2km_dec":
+            fastest_running_df['Date'] = pd.to_datetime(fastest_running_df['Date'], format='%Y-%m-%d', errors='coerce')
         fastest_running_df['start_time'] = (fastest_running_df['start_time_dec'] / 1000) + 7200  # adjust to ISR time
         fastest_running_df['start_time'] = pd.to_datetime(fastest_running_df['start_time'], unit='s')
         fastest_running_df = fastest_running_df.sort_values(by='start_time_dec')
         fastest_running_df = fastest_running_df.dropna(subset=['Date'])
-        ax = fastest_running_df.plot(x='start_time', y='Duration_raw', kind='bar',
-                                     color=color, figsize=(max((len(fastest_running_df) + 1) // 2, 4), 6),
-                                     label="Duration")
+        ax = fastest_running_df.plot(x='start_time', y='Duration_raw', kind='bar',  color=color,
+                                     figsize=(max((len(fastest_running_df) + 1) // 2, 4), 6), label="Duration")
         #
         plt.yticks([])
         plt.xticks(rotation=90)
@@ -485,3 +509,6 @@ if __name__ == "__main__":
     print(test.plot_per_every_year_longest_running())
     # plots pdf
     print(test.save_plot_to_pdf())
+    #
+    print(test.per_year_fastest_42k_list(2024, 3))
+    print(test.per_year_fastest_running(_year=2024, _num_of_runs=3, running_distance="max_42_2km_dec"))
