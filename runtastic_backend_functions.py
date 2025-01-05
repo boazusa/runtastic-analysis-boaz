@@ -9,7 +9,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 print("Current script directory:", os.path.dirname(os.path.abspath(__file__)))
 print("Current working directory:", os.getcwd())
 decimal_to_time = read_runtastic_json.decimal_to_time
-PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20241103-000\Sport-sessions\\'
+PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20250104-000\Sport-sessions\\'
 OUTPUT_DIR_LOCATION = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Excel_and_CSV_new\\'  # _output_path
 PDF_SAVE = 1  #
 
@@ -245,7 +245,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         curr_year = int(_start_year)
         now = int(datetime.datetime.now().strftime('%Y'))
         every_year_fastest_runs_list = []
-        if running_distance == "max_42_2km_dec":
+        if running_distance == "max_42_2km_dec todo":
             while curr_year <= now:
                 every_year_fastest_runs_list += self.per_year_fastest_42k_list(_year=curr_year,
                                                                                _num_of_runs=_num_of_runs)
@@ -510,5 +510,5 @@ if __name__ == "__main__":
     # plots pdf
     print(test.save_plot_to_pdf())
     #
-    print(test.per_year_fastest_42k_list(2024, 3))
-    print(test.per_year_fastest_running(_year=2024, _num_of_runs=3, running_distance="max_42_2km_dec"))
+    print(test.per_year_fastest_42k_list(2025, 3))
+    print(test.per_year_fastest_running(_year=2025, _num_of_runs=3, running_distance="max_42_2km_dec"))
