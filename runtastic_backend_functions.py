@@ -1,5 +1,7 @@
 import datetime
 import os
+import time
+
 import pandas as pd
 
 import read_runtastic_json
@@ -125,18 +127,22 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             average_pace_min_km = '00:00:00'[3:]
         return average_pace_min_km
 
-    def per_every_year_attribute(self, start_year="2014", _attribute='Distance'):
+    def per_every_year_attribute(self, _start_year="2014", _end_year="now", _attribute='Distance'):
         """
-        :param start_year: str of starting year; defaulted to '2014'
+        :param _start_year: str of starting year; defaulted to '2014'
+        :param _end_year: default to current year, unless defined (ex. _end_year="2020")
         :param _attribute: str - Options: 'Distance / calories / Speed'
         :return: pandas DataFrame [pd.DataFrame] of 'year' and 'attribute (per year)' columns from 2014 to today's year
         """
-        now = int(datetime.datetime.now().strftime('%Y'))
+        if _end_year == "now":
+            now = int(datetime.datetime.now().strftime('%Y'))
+        else:
+            now = int(_end_year)
         # start_year = "2014"
         out = []
         attr_list = []
         year_list = []
-        start_year = int(start_year)
+        start_year = int(_start_year)
         #
         if _attribute == 'Distance':
             per_year_attr = self.per_year_distance
@@ -168,9 +174,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         total_duration_dec = year_duration['duration_decimal'].sum()
         return decimal_duration_to_time(total_duration_dec)
 
-    def per_every_year_duration(self, _start_year=2014):
+    def per_every_year_duration(self, _start_year="2014", _end_year="now"):
         curr_year = int(_start_year)
-        now = int(datetime.datetime.now().strftime('%Y'))
+        if _end_year == "now":
+            now = int(datetime.datetime.now().strftime('%Y'))
+        else:
+            now = int(_end_year)
         yearly_duration = []
         while curr_year <= now:
             year_duration = self.df[self.df["start_time"].str.contains(str(curr_year))][["duration_decimal"]].astype(
@@ -235,15 +244,20 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                 year_fastest_runs_list[i][1] = year_fastest_runs_list[i][1][:10]
         return year_fastest_runs_list
 
-    def per_every_year_fastest_running(self, _start_year="2014", _num_of_runs=3, running_distance="max_10km_dec"):
+    def per_every_year_fastest_running(self, _start_year="2014", _end_year="now",
+                                       _num_of_runs=3, running_distance="max_10km_dec"):
         """
         :param _start_year:         default to '2014'
+        :param _end_year:         default to current year, unless defined (ex. _end_year="2020")
         :param _num_of_runs:        int, # of fastest running results.
         :param running_distance:    type of running: "max_10km_dec", "max_21_1km_dec", "max_42_2km_dec"
         :return: running list of    list of fastest running scores of each year
         """
         curr_year = int(_start_year)
-        now = int(datetime.datetime.now().strftime('%Y'))
+        if _end_year == "now":
+            now = int(datetime.datetime.now().strftime('%Y'))
+        else:
+            now = int(_end_year)
         every_year_fastest_runs_list = []
         if running_distance == "max_42_2km_dec todo":
             while curr_year <= now:
@@ -274,17 +288,23 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         year_longest_runs_list.sort(key=lambda x: x[2])
         return year_longest_runs_list
 
-    def per_every_year_longest_running(self, _start_year="2014", _num_of_runs=3):
+    def per_every_year_longest_running(self, _start_year="2014", _end_year="now", _num_of_runs=3):
         curr_year = int(_start_year)
-        now = int(datetime.datetime.now().strftime('%Y'))
+        if _end_year == "now":
+            now = int(datetime.datetime.now().strftime('%Y'))
+        else:
+            now = int(_end_year)
         every_year_longest_runs_list = []
         while curr_year <= now:
             every_year_longest_runs_list += self.per_year_longest_running(_year=curr_year, _num_of_runs=_num_of_runs)
             curr_year += 1
         return every_year_longest_runs_list
 
-    def plot_per_every_year_attribute(self, plot_save_format='jpg', _attribute='Distance', pdf_p=None):
+    def plot_per_every_year_attribute(self, start_year="2014", end_year="now", plot_save_format='jpg',
+                                      _attribute='Distance', pdf_p=None):
         """
+        :param start_year:       default to '2014'
+        :param end_year:         default to current year, unless defined (ex. _end_year="2020")
         :param plot_save_format: plot file type: png, pdf, jpg, svg
         :param _attribute: str - Options: 'Distance / calories / Speed'
         :return: plot file name and current directory
@@ -292,7 +312,11 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :return: string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
         _attribute = _attribute.capitalize()
-        attr_df = self.per_every_year_attribute(_attribute=_attribute)
+        if end_year == "now":
+            now = datetime.datetime.now().strftime('%Y')
+        else:
+            now = end_year
+        attr_df = self.per_every_year_attribute(_attribute=_attribute, _start_year=start_year, _end_year=now)
         if _attribute == 'Calories':
             att_ylabel, att_title, att_color = 'Calories [Cal]', 'Calories burned per Year', 'skyblue'
             attr_df[_attribute] = attr_df[_attribute].astype(int)
@@ -327,14 +351,20 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         file_name = 'yearly_' + _attribute.lower() + f'_histogram_plot_{plot_date()}.{plot_save_format}'
         return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
-    def plot_per_every_year_duration(self, plot_save_format='jpg', pdf_p=None):
+    def plot_per_every_year_duration(self, start_year="2014", end_year="now", plot_save_format='jpg', pdf_p=None):
         """
+        :param start_year:       default to '2014'
+        :param end_year:         default to current year, unless defined (ex. _end_year="2020")
         :param plot_save_format: plot file type: png, pdf, jpg, svg
         :return: plot file name and current directory
         :param pdf_p:   pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
         :return: string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
-        duration_list = self.per_every_year_duration()
+        if end_year == "now":
+            now = datetime.datetime.now().strftime('%Y')
+        else:
+            now = end_year
+        duration_list = self.per_every_year_duration(_start_year=start_year, _end_year=now)
         duration_df = pd.DataFrame(duration_list, columns=['duration_str', 'duration_dec', 'year'])
         # data plot
         ax = duration_df.plot(x='year', y='duration_dec', alpha=0.9, kind='bar', color='#0f0cef', label='[hhh:mm:ss]')
@@ -351,10 +381,11 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         file_name = f'yearly_duration_histogram_plot_{plot_date()}.{plot_save_format}'
         return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
-    def plot_per_year_fastest_running(self, start_year="2014", _num_of_runs=3,
+    def plot_per_year_fastest_running(self, start_year="2014", end_year="now", _num_of_runs=3,
                                       running_distance="max_10km_dec", plot_save_format='jpg', pdf_p=None):
         """
         :param start_year:          default to '2014'
+        :param end_year:         default to current year, unless defined (ex. _end_year="2020")
         :param _num_of_runs:        int, # of fastest running results.
         :param running_distance:    type of running: "max_10km_dec", "max_21_1km_dec", "max_42_2km_dec"
         :param plot_save_format:    plot file type: png, pdf, jpg, svg
@@ -367,7 +398,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             run, units, color = '42.2Km', '[hh:mm:ss]', '#2ac4c4'
         else:
             run, units, color = '10Km', '[mm:ss]', '#36ffda'
+        if end_year == "now":
+            now = datetime.datetime.now().strftime('%Y')
+        else:
+            now = end_year
         fastest_running_df = pd.DataFrame(self.per_every_year_fastest_running(_start_year=start_year,
+                                                                              _end_year=now,
                                                                               _num_of_runs=_num_of_runs,
                                                                               running_distance=running_distance),
                                           columns=["Duration", "Date", 'calories', 'start_time_dec', "Duration_raw"])
@@ -401,18 +437,24 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         file_name = f'fastest_{run}_histogram_plot_{plot_date()}.{plot_save_format}'
         return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
-    def plot_per_every_year_longest_running(self, _start_year="2014", _num_of_runs=3,
+    def plot_per_every_year_longest_running(self, start_year="2014", end_year="now", _num_of_runs=3,
                                             plot_save_format='jpg', pdf_p=None):
         """
         description: plots the '_num_of_runs' of running activities of a selected distance.
         If there are not enough activities of a type, it will plot only these available of that year.
-        :param _start_year:         str, Ex. '2024'
-        :param _num_of_runs:        int
-        :param plot_save_format:    plot file type: png, pdf, jpg, svg
+        :param start_year:         str, Ex. '2024'
+        :param end_year:           default to current year, unless defined (ex. _end_year="2020")
+        :param _num_of_runs:       int
+        :param plot_save_format:   plot file type: png, pdf, jpg, svg
         :param pdf_p:        pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
         :return:             string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
-        longest_runs_list = self.per_every_year_longest_running(_start_year=_start_year, _num_of_runs=_num_of_runs)
+        if end_year == "now":
+            now = datetime.datetime.now().strftime('%Y')
+        else:
+            now = end_year
+        longest_runs_list = self.per_every_year_longest_running(_start_year=start_year, _end_year=now,
+                                                                _num_of_runs=_num_of_runs)
         longest_runs_df = pd.DataFrame(longest_runs_list, columns=["Distance", "start_time", 'start_time_dec'])
         longest_runs_df['Distance'] = longest_runs_df['Distance'].astype(float).round(2)
         longest_runs_df['start_time'] = (longest_runs_df['start_time_dec'] / 1000) + 7200  # adjust to ISR time
@@ -507,6 +549,7 @@ if __name__ == "__main__":
     print(test.plot_per_year_fastest_running(running_distance="max_21_1km_dec"))
     print(test.plot_per_year_fastest_running(running_distance="max_42_2km_dec"))
     print(test.plot_per_every_year_longest_running())
+    # print(test.plot_per_every_year_longest_running(start_year="2022", end_year="2025", _num_of_runs=5))
     # plots pdf
     print(test.save_plot_to_pdf())
     #
