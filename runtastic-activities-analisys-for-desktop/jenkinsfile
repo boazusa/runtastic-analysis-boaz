@@ -1,0 +1,100 @@
+pipeline {
+    agent any
+
+    //triggers {
+    //    // Schedule the job to run every night at midnight
+    //    cron('H 0 * * 0-4')
+    //}
+
+    environment {
+        RUNTASTIC_GIT_REPO_URL = 'https://github.com/boazusa/runtastic-analysis-boaz.git'
+        GIT_BRANCH = 'main'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the Git repository
+                //git 'https://github.com/boazusa/runtastic-analysis-boaz.git'
+                git branch: "${env.GIT_BRANCH}", url: "${env.RUNTASTIC_GIT_REPO_URL}"
+            }
+        }
+        stage('Check Python Version') {
+            steps {
+                bat '''
+                ::set PATH=%PATH%;C:/tools/Python
+                "C:/tools/Python/python.exe" --version
+                ::python --version
+				::python -c "import sys; print(sys.executable)"
+                ::dir
+                '''
+                //bat 'python --version'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                // Install dependencies (optional, if you have a requirements.txt file)
+                bat '''
+				echo install missing libraries from requirements.txt
+                ::python3 -m venv venv
+                ::source venv/bin/activate
+                "C:/tools/Python/Scripts/pip.exe" install -r requirements.txt
+                '''
+                echo 'Installing requirements.txt done'
+            }
+        }
+
+        stage('#1 Run Python Script - Generates xml from running activities Json file') {
+            steps {
+                // Run the Python script
+                bat '''
+                set PATH=%PATH%;C:/tools/Python
+                ::python -c "import sys; print(sys.executable)"
+                ::dir
+                ::python runtastic-activities-analisys-for-desktop/read_runtastic_json.py
+                
+                
+                "C:/tools/Python/python.exe" runtastic-activities-analisys-for-desktop/read_runtastic_json.py
+                '''
+            }
+        }
+		stage('#2 Run Python Script - generates plots jpg and pdf from Pandas') {
+            steps {
+                // Run the Python script
+                bat '''
+                set PATH=%PATH%;C:/tools/Python
+                ::python runtastic-activities-analisys-for-desktop/runtastic_backend_functions.py
+                "C:/tools/Python/python.exe" runtastic-activities-analisys-for-desktop/runtastic_backend_functions.py
+                '''
+            }
+        }
+    }
+    
+    post {
+            always {
+                // Clean up, send notifications, etc.
+                echo 'Runtastic analysis execution finished'
+            }
+            success {
+                //'This will run only if the pipeline is successful.'
+                echo 'Execution results: PASSED'
+            }
+            failure {
+                // 'This will run only if the pipeline fails.''
+                echo 'Execution results: FAILED'
+            }
+            
+            /*
+            unstable {
+                // Actions that run only if the pipeline is unstable
+                echo "Pipeline is unstable!"
+            }
+            changed {
+                // Actions that run if the pipeline's status has changed
+                echo "Pipeline status has changed!"
+            }
+            */
+            
+    }
+}
