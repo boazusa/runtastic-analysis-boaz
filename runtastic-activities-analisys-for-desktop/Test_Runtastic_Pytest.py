@@ -114,7 +114,7 @@ def test_plots_pdf_generation(runtastic_fixture):
 
 
 if __name__ == '__main__':
-    pytest.main(['Test_Runtatic_Pytest.py', "-v", "--showlocals"])
+    pytest.main(['Test_Runtastic_Pytest.py', "-v", "--showlocals"])
 
 
     #
