@@ -19,7 +19,7 @@ Debug mode:
 6 - Print yearly summary (total distance, duration, average speed & pace, fastest 10Km, 21.1Km, 42.2Km activities)
 7 - Print yearly summary parsed data dictionary data (yearly_top_scores))
 """
-DEBUG = 6
+DEBUG = 0
 
 # PATH = r"C:\Users\USER\Documents\Python\Runtastic_script_My_PC\Jsons_for_new_Script"
 # PATH = r'C:\Users\USER\Documents\Python\Runtastic_script_My_PC\export-20240426-000\Sport-sessions\\'  # _output_path
@@ -540,7 +540,7 @@ class Runtastic_Data_To_Csv:
     #     return year_best_10ks_list
 
     def __str__(self):
-        if self.sport_type_id == "1":
+        if self.sport_type_id != "00":
             distance_float = [float(x) for x in self.export_dict['distance']]
             duration_decimal = [float(y) for y in self.export_dict['duration_decimal']]
             total_duration_dec = sum(duration_decimal)

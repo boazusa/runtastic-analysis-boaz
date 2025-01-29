@@ -142,7 +142,11 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         out = []
         attr_list = []
         year_list = []
-        start_year = int(_start_year)
+        if _start_year == "now":
+            start_year = int(datetime.datetime.now().strftime('%Y'))
+        else:
+            start_year = int(_start_year)
+
         #
         if _attribute == 'Distance':
             per_year_attr = self.per_year_distance
@@ -175,7 +179,10 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         return decimal_duration_to_time(total_duration_dec)
 
     def per_every_year_duration(self, _start_year="2014", _end_year="now"):
-        curr_year = int(_start_year)
+        if _start_year == "now":
+            curr_year = int(datetime.datetime.now().strftime('%Y'))
+        else:
+            curr_year = int(_start_year)
         if _end_year == "now":
             now = int(datetime.datetime.now().strftime('%Y'))
         else:
@@ -270,7 +277,6 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                                                                               _num_of_runs=_num_of_runs,
                                                                               running_distance=running_distance)
                 curr_year += 1
-        # print(every_year_fastest_runs_list)
         return every_year_fastest_runs_list
 
     def per_year_longest_running(self, _year, _num_of_runs):
