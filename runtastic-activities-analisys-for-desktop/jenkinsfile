@@ -69,6 +69,15 @@ pipeline {
                 '''
             }
         }
+        stage('#3 Run Pytest - test runtastic project functions') {
+            steps {
+                // Run the Python Pytest script
+                bat '''
+                set PATH=%PATH%;C:/tools/Python
+                "C:/tools/Python/Scripts/pytest.exe" Test_Runtastic_Pytest.py -v --showlocals --self-contained-html --html=reports/Test_Runtastic_Pytest_report.html
+                '''
+            }
+        }
     }
     
     post {
