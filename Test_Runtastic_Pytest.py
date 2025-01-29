@@ -118,17 +118,7 @@ if __name__ == '__main__':
 
 
     #
-    test = runtastic_backend_functions.runtastic_data_filter(_files_path=PATH, _output_path=OUTPUT_DIR_LOCATION)
-    test.create_main_dataframe()
-    print(test.per_year_speed(2017))
-    print(test.per_year_speed(2022))
-    print(test.per_year_speed(2022))
-    print(test.per_year_distance(2022))
-    print(test.per_every_year_attribute(_start_year="2014", _end_year="now", _attribute='Distance').loc[1]['Distance'])
-    print(test.per_every_year_attribute(_start_year="2014", _end_year="now", _attribute='Distance').loc[1])
-    print(test.per_every_year_attribute(_start_year="2020", _end_year="now", _attribute='Distance'))
-    print(test.per_every_year_attribute(_start_year="2020", _end_year="now", _attribute='Distance').shape[0])
-    print(test.per_every_year_attribute(_start_year="2020", _end_year="now", _attribute='Distance').shape[1])
-    print(test.per_year_longest_running(2014, 5))
+    # test = runtastic_backend_functions.runtastic_data_filter(_files_path=PATH, _output_path=OUTPUT_DIR_LOCATION)
+    # test.create_main_dataframe()
     #
 
