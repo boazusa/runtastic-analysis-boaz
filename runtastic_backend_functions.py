@@ -559,5 +559,4 @@ if __name__ == "__main__":
     # plots pdf
     print(test.save_plot_to_pdf())
     #
-    print(test.per_year_fastest_42k_list(2025, 3))
-    print(test.per_year_fastest_running(_year=2025, _num_of_runs=3, running_distance="max_42_2km_dec"))
+

@@ -78,15 +78,38 @@ def  test_per_every_year_attribute(runtastic_fixture, start, end, attribute, exp
 
 
 duration_test_list = [["2018", "2024", 7, 3],
-             ["2019", "2019", 1, 3],
-             ["2014", "2024", 11, 3],
-             ["now", "now", 1, 3]]
+                      ["2019", "2019", 1, 3],
+                      ["2014", "2024", 11, 3],
+                      ["now", "now", 1, 3]]
 
 @pytest.mark.parametrize("start, end, expected_row, expected_col", duration_test_list)
 def  test_per_every_year_duration(runtastic_fixture, start, end, expected_row, expected_col):
     arr = runtastic_fixture.per_every_year_duration(_start_year=start, _end_year=end)
     assert len(arr) == expected_row
     assert len(arr[0]) == expected_col
+
+
+fastest_running_list = [["2017", 7, "max_10km_dec"],
+                        ["2019", 1, "max_10km_dec"],
+                        ["2014", 11, "max_21_1km_dec"],
+                        ["2024", 11, "max_21_1km_dec"],
+                        ["2025", 1, "max_42_2km_dec"]]
+
+@pytest.mark.parametrize("year, num_of_act, distance", fastest_running_list)
+def test_per_year_fastest_running(runtastic_fixture, year, num_of_act, distance):
+    arr = runtastic_fixture.per_year_fastest_running(_year=year, _num_of_runs=num_of_act, running_distance=distance)
+    assert len(arr) == num_of_act
+    assert len(arr[0]) == 5
+
+
+marathon_running_list = [["2017", 7, 0], ["2019", 1, 0], ["2024", 11, 2]]
+
+@pytest.mark.parametrize("year, num_of_act, expected_len", marathon_running_list)
+def test_per_year_fastest_running(runtastic_fixture, year, num_of_act, expected_len):
+    arr = runtastic_fixture.per_year_fastest_42k_list(year, num_of_act)
+    assert len(arr) == expected_len
+    if expected_len != 0:
+        assert len(arr[0]) == 5
 
 def test_verify_running_activities_csv_file_was_generated(runtastic_fixture):
     runtastic_fixture.execute(1)
@@ -108,6 +131,41 @@ def test_plots_pdf_generation(runtastic_fixture):
     msg = runtastic_fixture.save_plot_to_pdf()
     msg_lst = msg.split("'")
     output_file = msg_lst[2][14:] + '/' + msg_lst[1]
+    assert os.path.isfile(output_file)
+    time.sleep(0.5)
+    os.remove(output_file)
+
+@pytest.mark.parametrize("attribute", ['Distance', 'calories', 'Speed'])
+def test_plot_per_every_year_attribute(runtastic_fixture, attribute):
+    msg = runtastic_fixture.plot_per_every_year_attribute(_attribute=attribute)
+    file_name = msg[6:msg.find('.jpg')]
+    output_file = msg[80:] + '\\' + file_name + '.jpg'
+    assert os.path.isfile(output_file)
+    time.sleep(0.5)
+    os.remove(output_file)
+
+def test_plot_per_every_year_duration(runtastic_fixture):
+    msg = runtastic_fixture.plot_per_every_year_duration()
+    file_name = msg[6:msg.find('.jpg')]
+    output_file = msg[80:] + '\\' + file_name + '.jpg'
+    assert os.path.isfile(output_file)
+    time.sleep(0.5)
+    os.remove(output_file)
+
+
+@pytest.mark.parametrize("distance", ["max_10km_dec", "max_21_1km_dec", "max_42_2km_dec"])
+def test_plot_per_year_fastest_running(runtastic_fixture, distance):
+    msg = runtastic_fixture.plot_per_year_fastest_running(running_distance=distance)
+    file_name = msg[6:msg.find('.jpg')]
+    output_file = msg[80:] + '\\' + file_name + '.jpg'
+    assert os.path.isfile(output_file)
+    time.sleep(0.5)
+    os.remove(output_file)
+
+def test_plot_per_every_year_longest_running(runtastic_fixture):
+    msg = runtastic_fixture.plot_per_every_year_longest_running()
+    file_name = msg[6:msg.find('.jpg')]
+    output_file = msg[80:] + '\\' + file_name + '.jpg'
     assert os.path.isfile(output_file)
     time.sleep(0.5)
     os.remove(output_file)

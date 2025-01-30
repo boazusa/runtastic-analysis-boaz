@@ -74,7 +74,7 @@ pipeline {
                 // Run the Python Pytest script
                 bat '''
                 set PATH=%PATH%;C:/tools/Python
-                "C:/tools/Python/Scripts/pytest.exe" Test_Runtastic_Pytest.py -v --showlocals --self-contained-html --html=reports/Test_Runtastic_Pytest_report.html
+                "C:/tools/Python/Scripts/pytest.exe" Test_Runtastic_Pytest.py -v --showlocals --self-contained-html --html=reports/Test_Runtastic_Pytest_report.html --cov=runtastic_backend_functions --cov=read_runtastic_json --cov-report=html
                 '''
             }
         }
