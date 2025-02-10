@@ -50,6 +50,7 @@ class Runtastic_Data_To_Csv:
         self.sport_type_id = '0'
         self.last_activity_date = 'N/A'
         self.date = '0'
+        self.year_month = '0'
         self.start_time = '0'
         self.start_time_dec = 0
         self.end_time = '0'
@@ -85,8 +86,8 @@ class Runtastic_Data_To_Csv:
                               'average_speed', 'max_speed', 'max_heart_rate', 'ave_heart_rate', 'calories',
                               'max_1km', 'max_5km', 'max_10km', 'max_21_1km', 'max_42_2km']
 
-        self.excel_columns_raw = self.excel_columns + ['max_10km_dec', 'max_21_1km_dec',
-                                                       'max_42_2km_dec', 'start_time_dec', 'duration_decimal_ms']
+        self.excel_columns_raw = self.excel_columns + ['max_10km_dec', 'max_21_1km_dec', 'max_42_2km_dec',
+                                                       'start_time_dec', 'duration_decimal_ms', 'year_month']
         for element in self.excel_columns_raw:
             self.export_dict[element] = []
         self.df = pd.DataFrame()
@@ -129,6 +130,7 @@ class Runtastic_Data_To_Csv:
     def reset_data(self):
         self.sport_type_id = '0'
         self.date = '0'
+        self.year_month = '0'
         self.start_time = '0'
         self.start_time_dec = 0
         self.end_time = '0'
@@ -154,6 +156,7 @@ class Runtastic_Data_To_Csv:
 
     def time_and_distance(self):
         self.date = strftime('%m-%d-%Y', localtime(self.json_data_content["start_time"] / 1000))
+        self.year_month = strftime('%Y-%m', localtime(self.json_data_content["start_time"] / 1000))
         self.start_time = strftime('%Y-%m-%d %H:%M:%S', localtime(self.json_data_content["start_time"] / 1000))
         self.start_time_dec = self.json_data_content["start_time"]
         self.end_time = strftime('%Y-%m-%d %H:%M:%S', localtime(self.json_data_content["end_time"] / 1000))
@@ -227,6 +230,7 @@ class Runtastic_Data_To_Csv:
 
     def append_data_to_dict(self):
         if self.distance != "0":
+            self.export_dict['year_month'].append(self.year_month)
             self.export_dict['start_time'].append(self.start_time)
             self.export_dict['start_time_dec'].append(self.start_time_dec)
             self.export_dict['end_time'].append(self.end_time)
