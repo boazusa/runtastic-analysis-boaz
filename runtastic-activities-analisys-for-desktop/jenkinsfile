@@ -82,10 +82,13 @@ pipeline {
                     
                     @echo off
                     for /f "tokens=2 delims==" %%I in ('"wmic os get localdatetime /value"') do set datetime=%%I
+                    
+                    // Set the current date and time in the format "YYYY-MM-DD_HH-MM-SS"
                     set timestamp=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%_%datetime:~8,2%-%datetime:~10,2%-%datetime:~12,2%
+                    // Display the current date and time in the format "YYYY-MM-DD_HH-MM-SS"
                     echo %timestamp%
-
-                    // Get the current date and time in the format "YYYY-MM-DD_HH-MM-SS"
+                    
+                    // Generate test report with timestamp running Pytest
                     set PATH=%PATH%;C:/tools/Python
                     "C:/tools/Python/Scripts/pytest.exe" Test_Runtastic_Pytest.py -v --showlocals --self-contained-html --html=reports/Test_Runtastic_Pytest_report_%timestamp%.html --cov=runtastic_backend_functions --cov=read_runtastic_json --cov-report=html
                     '''
