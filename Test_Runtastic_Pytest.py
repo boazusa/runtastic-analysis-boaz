@@ -18,8 +18,8 @@ def runtastic_fixture():
 
 
 def test_raw_dataframe(runtastic_fixture):
-    assert len(runtastic_fixture.df.columns) == 21
-    assert runtastic_fixture.df.shape[1] == 21
+    assert len(runtastic_fixture.df.columns) == len(runtastic_fixture.excel_columns_raw)
+    assert runtastic_fixture.df.shape[1] == 22
     assert runtastic_fixture.df.shape[0] > 1000
 
 
@@ -53,6 +53,13 @@ def test_per_year_longest_running(runtastic_fixture, year, num):
     assert len(runtastic_fixture.per_year_longest_running(year, num)) in [num, max_yearly_run_activities]
     assert len(runtastic_fixture.per_year_longest_running(year, num)[0]) == 3
 
+@pytest.mark.parametrize("year, num", [(2024, 3), (2025, 10)])
+def test_per_year_longest_distance(runtastic_fixture, year, num):
+    # per_year_longest_running_dis_sorted = runtastic_fixture.per_year_longest_running(year, num)
+    # per_year_longest_running_dis_sorted.sort(key=lambda x: x[0])
+    # assert per_year_longest_running_dis_sorted[-1][0] > 42.19
+    assert sorted(runtastic_fixture.per_year_longest_running(year, num), key=lambda x: x[0])[-1][0] > 42.19
+
 @pytest.mark.parametrize("start, end, num", [(2020, 2022, 3), (2021, 2022,  10), (2023, 2023, 5), (2019, 2024, 20)])
 def test_per_every_year_longest_running(runtastic_fixture, start, end, num):
     rows = runtastic_fixture.per_every_year_longest_running(_start_year=start, _end_year=end, _num_of_runs=num)
@@ -62,13 +69,14 @@ def test_per_every_year_longest_running(runtastic_fixture, start, end, num):
     assert columns == 3
 
 
-attribute_test_list = [["2022", "2024", 'Distance', 3, 2],
+attribute_test_list = [["2022", "2024", 'Distance', 3, 2],  # expected_row = 2024 - 2022 + 1 = 3
              ["2018", "2024", 'Calories', 7, 2],
              ["2019", "2019", 'Speed', 1, 2],
              ["2014", "2024", 'Distance', 11, 2],
+             ["2014", "2024", 'N/A', 11, 2],                # undefined attribute is defaulted to Distance
              ["2014", "2024", 'Calories', 11, 2],
              ["2014", "2024", 'Speed', 11, 2],
-             ["now", "now", 'Speed', 1, 2]]
+             ["now", "now", 'Speed', 1, 2]]                 # expected_row = current year - current year + 1 = 1
 
 @pytest.mark.parametrize("start, end, attribute, expected_row, expected_col", attribute_test_list)
 def  test_per_every_year_attribute(runtastic_fixture, start, end, attribute, expected_row, expected_col):
@@ -83,13 +91,13 @@ duration_test_list = [["2018", "2024", 7, 3],
                       ["now", "now", 1, 3]]
 
 @pytest.mark.parametrize("start, end, expected_row, expected_col", duration_test_list)
-def  test_per_every_year_duration(runtastic_fixture, start, end, expected_row, expected_col):
+def test_per_every_year_duration(runtastic_fixture, start, end, expected_row, expected_col):
     arr = runtastic_fixture.per_every_year_duration(_start_year=start, _end_year=end)
     assert len(arr) == expected_row
     assert len(arr[0]) == expected_col
 
 
-fastest_running_list = [["2017", 7, "max_10km_dec"],
+fastest_running_list = [["2017", 7, "max_10km_dec"],                # year, activities #, category length
                         ["2019", 1, "max_10km_dec"],
                         ["2014", 11, "max_21_1km_dec"],
                         ["2024", 11, "max_21_1km_dec"],
@@ -102,10 +110,27 @@ def test_per_year_fastest_running(runtastic_fixture, year, num_of_act, distance)
     assert len(arr[0]) == 5
 
 
+fastest_running_time_list = [["2022", 1, "max_10km_dec", 2400],     # year, activities #, category length, time (sec)
+                             ["2023", 1, "max_10km_dec", 2400],
+                             ["2024", 1, "max_10km_dec", 2400],
+                             ["2023", 1, "max_21_1km_dec", 5400],
+                             ["2025", 1, "max_21_1km_dec", 5400],
+                             ["2025", 1, "max_42_2km_dec", 10800]]
+
+@pytest.mark.parametrize("year, num_of_act, distance, seconds", fastest_running_time_list)
+def test_per_year_fastest_running_times(runtastic_fixture, year, num_of_act, distance, seconds):
+    arr = runtastic_fixture.per_year_fastest_running(_year=year, _num_of_runs=num_of_act, running_distance=distance)
+    assert (int(arr[0][4]) / 1000) < seconds, f"On {year}, the fastest " \
+                                              f"{distance.replace('max_', '').replace('_dec', '')} " \
+                                              f"was < {runtastic_backend_functions.decimal_to_time(1000 * seconds)} " \
+                                              f"minutes, but the test reported " \
+                                              f"{runtastic_backend_functions.decimal_to_time(arr[0][4])} minutes"
+
+
 marathon_running_list = [["2017", 7, 0], ["2019", 1, 0], ["2024", 11, 2]]
 
 @pytest.mark.parametrize("year, num_of_act, expected_len", marathon_running_list)
-def test_per_year_fastest_running(runtastic_fixture, year, num_of_act, expected_len):
+def test_per_year_fastest_fastest_42k(runtastic_fixture, year, num_of_act, expected_len):
     arr = runtastic_fixture.per_year_fastest_42k_list(year, num_of_act)
     assert len(arr) == expected_len
     if expected_len != 0:
