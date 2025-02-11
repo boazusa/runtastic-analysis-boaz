@@ -630,14 +630,17 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         monthly_running_df["duration"] = pd.to_datetime(monthly_running_df['duration_decimal_ms'] / 1000, unit='s').\
             dt.strftime('%H:%M:%S')
         # plot
-        plt.figure(figsize=(max(24, 4), 8))
+        plt.figure(figsize=(24, 8))
         ax = plt.bar(monthly_running_df['day'], monthly_running_df['distance'], alpha=0.9,
-                     color=plot_color, label='Distance [Km]')
+                     color=plot_color, label='Distance [Km]', width=0.8)
         plt.xlabel('Date')
         plt.xticks(monthly_running_df['day'])
+        plt.gca().set_xlim(0, 32)  # set X axle to 31 day even if not a complete month (fixed size and ticks)
         plt.ylabel('Distance')
-        plt.ylim(0, max(monthly_running_df["distance"]) + 7)
-        plt.title(f'{month} / {year} running, \n Total distance {"%.2f" % total_km} Km, '
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        if total_km > 0:
+            plt.ylim(0, max(monthly_running_df["distance"]) + 7)
+        plt.title(f'{month} / {year} running activities, \n Total distance {"%.2f" % total_km} Km, '
                   f'calories {"%.0f" % total_cals} cals, duration {total_duration} [hh:mm:ss]',
                   fontsize=14, fontweight='bold')
         monthly_running_df["duration_formatted"] = monthly_running_df["duration"].apply(format_duration_time)
@@ -649,8 +652,8 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                      bar.get_height() + 1,  # Slightly above the bar
                      label,  # Label from another column
                      ha='center', va='bottom', fontsize=10, fontweight='bold', rotation=50)  # fontweight='bold'
-        pdf_msg = f"'{month}_{year}_running_histogram_plot'"
-        file_name = f'{month}_{year}_running_histogram_plot_{plot_date()}.{plot_save_format}'
+        pdf_msg = f"'{month}_{year}_running_activities'"
+        file_name = f'{month}_{year}_running_activities_{plot_date()}.{plot_save_format}'  # remove plot_date()
         #
         return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
@@ -726,9 +729,9 @@ if __name__ == "__main__":
     print(test.save_plot_to_pdf())
     #
     print(test.plot_monthly_activity('08', '2024'))
-    print(test.plot_monthly_activity('1', '2022', "#9b2b70"))
+    print(test.plot_monthly_activity('6', '2022', "#9b2b70"))
     print(test.plot_monthly_activity('5', '2019', "#5c9b2b"))
-    print(test.plot_monthly_activity('12', '2021', "#2b9b4b"))
+    print(test.plot_monthly_activity('1', '2025', "#2b9b4b"))
 
 
 
