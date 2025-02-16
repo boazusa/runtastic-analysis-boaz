@@ -37,7 +37,7 @@ def format_duration_time(t):
     if hh == "00":
         return f"{mm}:{ss}"  # Only mm:ss if hh is 00
     elif hh != "00":
-        return f"{hh}:{mm}:{ss}"  # Keep full format if hh is 01
+        return f"{hh[1]}:{mm}:{ss}"  # Keep full format if hh is 0x, where x != 0; may use {hh}
     else:
         return t  # Keep as is for other cases
 
@@ -417,7 +417,8 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         plt.yticks([])
         plt.title('Running Duration per Year')
         for i, value in enumerate(duration_df['duration_dec']):
-            ax.text(i, value + 0.2, str(duration_df['duration_str'][i]), ha='center', va='bottom', rotation=25)
+            ax.text(i, value + 0.2, str(duration_df['duration_str'][i]),
+                    fontsize=8, ha='center', va='bottom', rotation=25)
         # Show the plot
         # plt.show() # block=False)
         pdf_msg = f"'yearly_duration_histogram_plot'"
@@ -553,7 +554,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         plt.ylabel('Distance')
         plt.title(f'Longest {_num_of_runs} running activities per every Year')
         for i, value in enumerate(longest_runs_df['Distance']):
-            ax.text(i, value + 0.2, str(value), ha='center', va='bottom', rotation=25)
+            ax.text(i, value + 0.2, str(value), fontsize=9, ha='center', va='bottom', rotation=25)
         # plt.show()
         pdf_msg = f"'longest_running_histogram_plot'"
         file_name = f'longest_running_histogram_plot_{plot_date()}.{plot_save_format}'
@@ -589,7 +590,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         """
         :param _month: STR, Ex. '01'
         :param _year: STR, Ex. '2024'
-        :return: float, total running Km in a year
+        :return: PD DF, activities data of the input mm/yyyy [_month/_year]
         """
         month_activity = self.df[self.df["start_time"].str.contains(str(_year) + '-' + str(_month))]
         total_running_km = month_activity[['start_time', 'distance', 'duration', 'calories', 'ave_heart_rate',
@@ -612,11 +613,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         """
         if len(month) == 1:
             month = '0' + month
-        monthly_running = self.monthly_activity(month, year)
-        monthly_running_df = pd.DataFrame(monthly_running, columns=['start_time', 'distance', 'duration',
-                                                                    'calories', 'ave_heart_rate', 'duration_decimal_ms',
-                                                                    'max_10km', 'max_21_1km', 'max_42_2km',
-                                                                    'start_time_dec'])
+        monthly_running_df = self.monthly_activity(month, year)
         monthly_running_df['distance'] = monthly_running_df['distance'].astype(float).round(2)
         # sum total duration, distance, calories
         total_km = monthly_running_df['distance'].sum()
@@ -646,7 +643,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         monthly_running_df["duration_formatted"] = monthly_running_df["duration"].apply(format_duration_time)
         monthly_running_df["total"] = monthly_running_df["distance"].round(2).astype(str) + " Km\n" + \
                                       monthly_running_df["duration_formatted"]
-        # Add labels from another column
+        # Add labels from "total" column
         for bar, label in zip(ax, monthly_running_df["total"]):
             plt.text(bar.get_x() + bar.get_width() / 2,  # Center of bar
                      bar.get_height() + 1,  # Slightly above the bar
@@ -657,6 +654,86 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         #
         return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
+    def yearly_activity(self, _year):
+        """
+        :param _year: STR, Ex. '2024'
+        :return: PD DF, activities data of the input yyyy [_year] per month; 12 rows.
+        """
+        yearly_activity = self.df[self.df["start_time"].str.contains(str(_year))]
+        total_running_km = yearly_activity[['start_time', 'distance', 'duration', 'calories', 'ave_heart_rate',
+                                            'duration_decimal_ms', 'max_10km', 'max_21_1km', 'max_42_2km',
+                                            'start_time_dec']].reset_index().drop('index', axis=1)
+        total_running_km["distance"] = total_running_km["distance"].astype(float)
+        total_running_km["calories"] = total_running_km["calories"].astype(int)
+        total_running_km['start_time'] = (total_running_km['start_time_dec'] / 1000) + 7200  # adjust to ISR time
+        total_running_km['month_year'] = pd.to_datetime(total_running_km['start_time'], unit='s').dt.strftime('%m/%Y')
+        total_running_km = total_running_km.groupby('month_year', as_index=False).sum()
+        total_running_km['duration'] = pd.to_datetime(total_running_km['duration_decimal_ms'] / 1000, unit='s'). \
+            dt.strftime('%H:%M:%S')
+        # TODO plot function and move totals and aves to it.
+        total_duration = decimal_to_time(total_running_km['duration_decimal_ms'].sum())
+        total_cals = total_running_km["calories"].sum()
+        # print(ave_pace, ave_speed, total_cals, total_duration)
+        #
+        return total_running_km[['month_year', 'distance', 'duration_decimal_ms', 'duration', 'calories', 'start_time_dec']]
+
+    def plot_yearly_activity(self, year, plot_color='#b7ff30', plot_save_format='jpg', pdf_p=None):
+        """
+        description: plots the '_num_of_runs' of running activities of a selected distance.
+        If there are not enough activities of a type, it will plot only these available of that year.
+        :param year: STR, Ex. '2024'
+        :param plot_color: histogram plot color; color codes can be found in https://htmlcolorcodes.com/
+        :param plot_save_format:   plot file type: png, pdf, jpg, svg
+        :param pdf_p:        pdf pointer: to be passed from the 'def save_plot_to_pdf(self)' function, or 'None' if .jpg
+        :return:             string of file name and path, 'added to pdf', or error if attribute is not in dataframe
+        """
+        yearly_running_df = self.yearly_activity(year)
+        yearly_running_df['distance'] = yearly_running_df['distance'].astype(float).round(2)
+        # sum total duration, distance, calories
+        total_km = yearly_running_df['distance'].sum()
+        if not total_km:
+            return f"No running data for year {year}"
+        total_cals = yearly_running_df['calories'].astype(float).sum()
+        total_duration = decimal_to_time(yearly_running_df['duration_decimal_ms'].astype(float).sum())
+        ave_pace = decimal_to_time(yearly_running_df['duration_decimal_ms'].sum() /
+                                   (yearly_running_df['distance'].sum()))[3:]  # ms/m == sec/Km
+        ave_speed = '%.2f' % (yearly_running_df['distance'].sum() /
+                              (yearly_running_df['duration_decimal_ms'].sum() / (3600 * 1000)))  # from ms to hours
+        #
+        # Convert duration (in ms) to total seconds
+        yearly_running_df['duration_decimal_sec'] = yearly_running_df['duration_decimal_ms'] / 1000
+
+        # Calculate hours, minutes, and seconds
+        yearly_running_df['duration'] = yearly_running_df['duration_decimal_sec'].apply(
+            lambda x: f"{int(x // 3600):02}:{int((x % 3600) // 60):02}:{int(x % 60):02}"
+        )
+        # plot
+        plt.figure(figsize=(24, 8))
+        ax = plt.bar(yearly_running_df['month_year'], yearly_running_df['distance'], alpha=0.9,
+                     color=plot_color, label='Distance [Km]', width=0.5)
+        plt.xlabel('Date')
+        plt.xticks(yearly_running_df['month_year'])
+        plt.gca().set_xlim(-0.5, 11.5)  # set X axle to 12 months even if not a complete month (fixed size and ticks)
+        plt.ylabel('Distance')
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        if total_km > 0:
+            plt.ylim(0, max(yearly_running_df["distance"]) + 55)
+        plt.title(f'{year} running activities, \n Total distance {"%.2f" % total_km} Km, '
+                  f'calories {"%.0f" % total_cals} cals, duration {total_duration} [hh:mm:ss]\n'
+                  f'Average speed {ave_speed}, average pace {ave_pace}',
+                  fontsize=14, fontweight='bold')
+        yearly_running_df["total"] = yearly_running_df["distance"].round(2).astype(str) + " Km\n" + \
+                                      yearly_running_df["duration"] + " h"
+        # Add labels from "total" column
+        for bar, label in zip(ax, yearly_running_df["total"]):
+            plt.text(bar.get_x() + bar.get_width() / 2,  # Center of bar
+                     bar.get_height() + 1,  # Slightly above the bar
+                     label,  # Label from another column
+                     ha='center', va='bottom', fontsize=11, fontweight='bold', rotation=50)  # fontweight='bold'
+        pdf_msg = f"'{year}_running_activities'"
+        file_name = f'{year}_running_activities_{plot_date()}.{plot_save_format}'  # remove plot_date()
+        #
+        return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
 if __name__ == "__main__":
     test = runtastic_data_filter(_files_path=PATH, _output_path=OUTPUT_DIR_LOCATION)
@@ -733,5 +810,11 @@ if __name__ == "__main__":
     print(test.plot_monthly_activity('5', '2019', "#5c9b2b"))
     print(test.plot_monthly_activity('1', '2025', "#2b9b4b"))
 
-
+    (test.yearly_activity(2023))
+    (test.yearly_activity(2024))
+    (test.yearly_activity(2025))
+    print(test.plot_yearly_activity(2022))
+    print(test.plot_yearly_activity(2023))
+    print(test.plot_yearly_activity(2024))
+    print(test.plot_yearly_activity(2025))
 
