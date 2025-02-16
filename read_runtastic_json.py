@@ -203,30 +203,31 @@ class Runtastic_Data_To_Csv:
     def fastest_segments(self):
         for dicts in self.json_data_content["features"]:
             if "type" in dicts and "fastest_segments" in dicts['type']:
-                for top_speed in dicts["attributes"]["segments"]:
-                    # TODO, change method; check for dicts["attributes"]["segments"] len and pattern
-                    if top_speed["distance"] == "1km":
-                        self.max_1km = decimal_to_time(top_speed["duration"])
-                    if "5km" in top_speed["distance"]:
-                        self.max_5km = decimal_to_time(top_speed["duration"])
-                    if "10km" in top_speed["distance"]:  # if top_speed["distance"] == "10km":
-                        if top_speed["duration"] < self.fastest_max_10km:
-                            self.fastest_max_10km = top_speed["duration"]
-                            self.fastest_10km_date = self.date
-                        self.max_10km = decimal_to_time(top_speed["duration"])
-                        self.max_10km_dec = top_speed["duration"]
-                    if "half_marathon" in top_speed["distance"]:
-                        if top_speed["duration"] < self.fastest_max_21_1km:
-                            self.fastest_max_21_1km = top_speed["duration"]
-                            self.fastest_21_1km_date = self.date
-                        self.max_21_1km = decimal_to_time(top_speed["duration"])
-                        self.max_21_1km_dec = top_speed["duration"]
-                    if top_speed["distance"] == "marathon":
-                        if top_speed["duration"] < self.fastest_max_42_2km:
-                            self.fastest_max_42_2km = top_speed["duration"]
-                            self.fastest_42_2km_date = self.date
-                        self.max_42_2km = decimal_to_time(top_speed["duration"])
-                        self.max_42_2km_dec = top_speed["duration"]
+                top_speed = dicts["attributes"]["segments"]
+                if len(top_speed) > 0:
+                    self.max_1km = decimal_to_time(top_speed[0]["duration"])
+                if len(top_speed) >= 4:
+                    self.max_5km = decimal_to_time(top_speed[3]["duration"])
+                if len(top_speed) >= 5:
+                    self.max_10km = decimal_to_time(top_speed[4]["duration"])
+                    self.max_10km_dec = top_speed[4]["duration"]
+                    if top_speed[4]["duration"] < self.fastest_max_10km:
+                        self.fastest_max_10km = top_speed[4]["duration"]
+                        self.fastest_10km_date = self.date
+                if len(top_speed) >= 6:
+                    self.max_21_1km = decimal_to_time(top_speed[5]["duration"])
+                    self.max_21_1km_dec = top_speed[5]["duration"]
+                    if top_speed[5]["duration"] < self.fastest_max_21_1km:
+                        self.fastest_max_21_1km = top_speed[5]["duration"]
+                        self.fastest_21_1km_date = self.date
+                if len(top_speed) >= 7:
+                    self.max_42_2km = decimal_to_time(top_speed[6]["duration"])
+                    self.max_42_2km_dec = top_speed[6]["duration"]
+                    if top_speed[6]["duration"] < self.fastest_max_42_2km:
+                        self.fastest_max_42_2km = top_speed[6]["duration"]
+                        self.fastest_42_2km_date = self.date
+                # .apply(decimal_to_time) after conv to df @ create_raw_dataframe_form_list(): 10 21.1 42.2
+                break   # exit the loop after finding the "fastest_segments"
 
     def append_data_to_dict(self):
         if self.distance != "0":
@@ -340,18 +341,21 @@ class Runtastic_Data_To_Csv:
               '\nCSV File Name:\t\t\t\t\t', self.date_for_file + '_Runtastic_Boaz.csv')
         print(120 * '-')
 
-    def start_time_message(self):
+    @staticmethod
+    def start_time_message():
         now = datetime.datetime.now()
         print(120 * '-')
         print(now.strftime('%Y-%m-%d_@_%H:%M:%S'), 'Start processing')
         print(120 * '-')
 
-    def end_time_message(self):
+    @staticmethod
+    def end_time_message():
         now = datetime.datetime.now()
         print(now.strftime('%Y-%m-%d_@_%H:%M:%S'), 'CSV is ready')
         print(120 * '-')
 
-    def end_time_data_summary_message(self):
+    @staticmethod
+    def end_time_data_summary_message():
         now = datetime.datetime.now()
         print(now.strftime('%Y-%m-%d_@_%H:%M:%S'), 'Finished processing')
         print(120 * '-')
