@@ -53,8 +53,8 @@ pipeline {
                 ::python -c "import sys; print(sys.executable)"
                 ::dir
                 ::python runtastic-activities-analisys-for-desktop/read_runtastic_json.py
-
-
+                
+                
                 "C:/tools/Python/python.exe" runtastic-activities-analisys-for-desktop/read_runtastic_json.py
                 '''
             }
@@ -69,8 +69,37 @@ pipeline {
                 '''
             }
         }
+        stage('#3 Run Pytest - test runtastic project functions') {
+            steps {
+                // Run the Python script
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    script{
+                        // Get the current date and time in the format "YYYY-MM-DD_HH-MM-SS"
+                        def dateTime = bat(script: 'powershell -Command "Get-Date -Format \"yyyy-MM-dd_HH-mm-ss\""', returnStdout: true).trim()
+                        
+                        // Define the report filename with the current date and time
+                        def reportFile = "reports/Test_Runtastic_Pytest_report_${dateTime}.html"
+                        // Run the Python Pytest script
+                        bat '''
+                        
+                        @echo off
+                        for /f "tokens=2 delims==" %%I in ('"wmic os get localdatetime /value"') do set datetime=%%I
+                        
+                        // Set the current date and time in the format "YYYY-MM-DD_HH-MM-SS"
+                        set timestamp=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%_%datetime:~8,2%-%datetime:~10,2%-%datetime:~12,2%
+                        // Display the current date and time in the format "YYYY-MM-DD_HH-MM-SS"
+                        echo %timestamp%
+                        
+                        // Generate test report with timestamp running Pytest
+                        set PATH=%PATH%;C:/tools/Python
+                        "C:/tools/Python/Scripts/pytest.exe" Test_Runtastic_Pytest.py -v --showlocals --self-contained-html --html=reports/Test_Runtastic_Pytest_report_%timestamp%.html --cov=runtastic_backend_functions --cov=read_runtastic_json --cov-report=html
+                        '''
+                    }
+                }
+            }
+        }
     }
-
+    
     post {
             always {
                 // Clean up, send notifications, etc.
@@ -84,7 +113,7 @@ pipeline {
                 // 'This will run only if the pipeline fails.''
                 echo 'Execution results: FAILED'
             }
-
+            
             /*
             unstable {
                 // Actions that run only if the pipeline is unstable
@@ -95,6 +124,6 @@ pipeline {
                 echo "Pipeline status has changed!"
             }
             */
-
+            
     }
 }

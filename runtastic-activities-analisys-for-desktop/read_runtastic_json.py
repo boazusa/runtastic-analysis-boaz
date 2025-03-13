@@ -39,6 +39,21 @@ def decimal_to_time(_decimal_time):
     return f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
 
 
+def convert_epoch_cols_to_hh_mm_ss(_df):
+    _df["max_1km"] = _df["max_1km"].apply(decimal_to_time)
+    _df["max_5km"] = _df["max_5km"].apply(decimal_to_time)
+    _df["max_10km"] = _df["max_10km"].apply(decimal_to_time)
+    _df["max_21_1km"] = _df["max_21_1km"].apply(decimal_to_time)
+    _df["max_42_2km"] = _df["max_42_2km"].apply(decimal_to_time)
+
+
+def change_df_columns_types(_df):
+    # _df["duration_decimal_ms"] = _df["duration_decimal_ms"].astype(float)
+    _df["distance"] = _df["distance"].astype(float)
+    _df["calories"] = _df["calories"].astype(int)
+    _df["average_speed"] = _df["average_speed"].astype(float)
+
+
 class Runtastic_Data_To_Csv:
     def __init__(self, _files_path='', _output_path=''):
         self.json_files_path = _files_path
@@ -226,7 +241,6 @@ class Runtastic_Data_To_Csv:
                     if top_speed[6]["duration"] < self.fastest_max_42_2km:
                         self.fastest_max_42_2km = top_speed[6]["duration"]
                         self.fastest_42_2km_date = self.date
-                # .apply(decimal_to_time) after conv to df @ create_raw_dataframe_form_list(): 10 21.1 42.2
                 break   # exit the loop after finding the "fastest_segments"
 
     def append_data_to_dict(self):
@@ -328,11 +342,13 @@ class Runtastic_Data_To_Csv:
 
     def create_raw_dataframe_form_list(self):
         self.df = pd.DataFrame(self.export_dict, columns=self.excel_columns_raw)
+        change_df_columns_types(self.df)
 
     def export_to_csv(self):
         now = datetime.datetime.now()
         self.date_for_file = now.strftime('%Y-%m-%d_T_%H_%M_%S')
         export_df = pd.DataFrame(self.export_dict, columns=self.excel_columns)
+        change_df_columns_types(export_df)
         export_df.to_csv(self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv',
                          index=False, header=True)
         # print("=====", self.output_path + self.date_for_folder + r'/' + self.date_for_file + '_Runtastic_Boaz.csv')

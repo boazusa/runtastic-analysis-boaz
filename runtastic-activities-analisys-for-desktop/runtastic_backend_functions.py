@@ -82,16 +82,14 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :param _year: STR, Ex. '2024'
         :return: float, total running Km in a year
         """
-        year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
-        total_running_km = year_distance['distance'].sum()
-        return total_running_km
+        yearly_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]]['distance'].sum()
+        return yearly_distance
 
     def total_distance(self):
         """
         :return: str total running distance logged.
         """
-        float_distance = self.df[["distance"]].astype(float)
-        total_running_km = float_distance['distance'].sum()
+        total_running_km = self.df[["distance"]]['distance'].sum()
         return '%.2f' % total_running_km  # f"{total_running_km:.2f}"
 
     def per_year_calories(self, _year):
@@ -99,16 +97,14 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :param _year: STR, Ex. '2024'
         :return: int, total calories burned in a year
         """
-        year_calories = self.df[self.df["start_time"].str.contains(str(_year))][["calories"]].astype(int)
-        total_calories = year_calories['calories'].sum()
-        return total_calories
+        yearly_calories = self.df[self.df["start_time"].str.contains(str(_year))][["calories"]]['calories'].sum()
+        return yearly_calories
 
     def total_calories(self):
         """
         :return: str total running burned calories logged.
         """
-        int_calories = self.df[["calories"]].astype(int)
-        total_calories = int_calories['calories'].sum()
+        total_calories = self.df[["calories"]]['calories'].sum()
         return total_calories
 
     def per_year_speed(self, _year):
@@ -116,7 +112,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :param _year: STR, Ex. '2024'
         :return: float, average Km/h in a year
         """
-        year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]].astype(float)
+        year_distance = self.df[self.df["start_time"].str.contains(str(_year))][["distance"]]
         year_duration = self.df[self.df["start_time"].str.contains(str(_year))][["duration_decimal"]].astype(float)
         if year_duration['duration_decimal'].sum() != 0 or year_distance['distance'].sum() != 0:
             average_speed_km_h = '%.2f' % (
@@ -222,7 +218,7 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                                     (self.df["distance"].astype(float) > 42)]
         year_fastest_42km = year_fastest_42km.copy()
         year_fastest_42km["duration_decimal"] = year_fastest_42km["duration_decimal"].astype(float)
-        year_fastest_42km["duration_raw"] = (year_fastest_42km["duration_decimal_ms"].astype(int))
+        year_fastest_42km["duration_raw"] = year_fastest_42km["duration_decimal_ms"].astype(int)
         year_fastest_42km = year_fastest_42km[["duration_decimal", "start_time", 'calories',
                                                'start_time_dec', 'duration_raw']]
         year_fastest_42km = year_fastest_42km.nsmallest(_num_of_runs, "duration_decimal")
@@ -342,6 +338,37 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             every_year_longest_runs_list += self.per_year_longest_running(_year=curr_year, _num_of_runs=_num_of_runs)
             curr_year += 1
         return every_year_longest_runs_list
+
+    def monthly_activity(self, _month, _year):
+        """
+        :param _month: STR, Ex. '01'
+        :param _year: STR, Ex. '2024'
+        :return: PD DF, activities data of the input mm/yyyy [_month/_year]
+        """
+        month_activity = self.df[self.df["start_time"].str.contains(str(_year) + '-' + str(_month))]
+        total_running_km = month_activity[['start_time', 'distance', 'duration', 'calories', 'ave_heart_rate',
+                                           'duration_decimal_ms', 'max_10km', 'max_21_1km', 'max_42_2km',
+                                           'start_time_dec']].reset_index().drop('index', axis=1)
+        #
+        return total_running_km
+
+    def yearly_activity(self, _year):
+        """
+        :param _year: STR, Ex. '2024'
+        :return: PD DF, activities data of the input yyyy [_year] per month; 12 rows.
+        """
+        yearly_activity = self.df[self.df["start_time"].str.contains(str(_year))]
+        total_running_km = yearly_activity[['start_time', 'distance', 'duration', 'calories', 'ave_heart_rate',
+                                            'duration_decimal_ms', 'max_10km', 'max_21_1km', 'max_42_2km',
+                                            'start_time_dec']].reset_index().drop('index', axis=1)
+        total_running_km['start_time'] = (total_running_km['start_time_dec'] / 1000) + 7200  # adjust to ISR time
+        total_running_km['month_year'] = pd.to_datetime(total_running_km['start_time'], unit='s').dt.strftime('%m/%Y')
+        total_running_km = total_running_km.groupby('month_year', as_index=False).sum()
+        total_running_km['duration'] = pd.to_datetime(total_running_km['duration_decimal_ms'] / 1000, unit='s'). \
+            dt.strftime('%H:%M:%S')
+        #
+        return total_running_km[['month_year', 'distance', 'duration_decimal_ms',
+                                 'duration', 'calories', 'start_time_dec']]
 
     def plot_per_every_year_attribute(self, start_year="2014", end_year="now", plot_save_format='jpg',
                                       _attribute='Distance', pdf_p=None):
@@ -552,7 +579,9 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
                                   figsize=(max((len(longest_runs_df) + 1) // 2, 4), 6), label='Distance [Km]')
         plt.xlabel('Date')
         plt.ylabel('Distance')
+        # plt.ylim(0, max(longest_runs_df["Distance"]) + 3)
         plt.title(f'Longest {_num_of_runs} running activities per every Year')
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
         for i, value in enumerate(longest_runs_df['Distance']):
             ax.text(i, value + 0.2, str(value), fontsize=9, ha='center', va='bottom', rotation=25)
         # plt.show()
@@ -585,20 +614,6 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
             return f"Document 'analysis_plots_{pdf_date}.pdf' was saved to {os.getcwd()}\\plots"
         else:
             return f"Saving plots to pdf is disabled"
-
-    def monthly_activity(self, _month, _year):
-        """
-        :param _month: STR, Ex. '01'
-        :param _year: STR, Ex. '2024'
-        :return: PD DF, activities data of the input mm/yyyy [_month/_year]
-        """
-        month_activity = self.df[self.df["start_time"].str.contains(str(_year) + '-' + str(_month))]
-        total_running_km = month_activity[['start_time', 'distance', 'duration', 'calories', 'ave_heart_rate',
-                                           'duration_decimal_ms', 'max_10km', 'max_21_1km', 'max_42_2km',
-                                           'start_time_dec']].reset_index().drop('index', axis=1)
-        total_running_km["distance"] = total_running_km["distance"].astype(float)
-        #
-        return total_running_km
 
     def plot_monthly_activity(self, month, year, plot_color='#462247', plot_save_format='jpg', pdf_p=None):
         """
@@ -654,29 +669,6 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         #
         return save_plot(_pdf_p=pdf_p, _plt_p=plt, _file_name=file_name, _pdf_msg=pdf_msg)
 
-    def yearly_activity(self, _year):
-        """
-        :param _year: STR, Ex. '2024'
-        :return: PD DF, activities data of the input yyyy [_year] per month; 12 rows.
-        """
-        yearly_activity = self.df[self.df["start_time"].str.contains(str(_year))]
-        total_running_km = yearly_activity[['start_time', 'distance', 'duration', 'calories', 'ave_heart_rate',
-                                            'duration_decimal_ms', 'max_10km', 'max_21_1km', 'max_42_2km',
-                                            'start_time_dec']].reset_index().drop('index', axis=1)
-        total_running_km["distance"] = total_running_km["distance"].astype(float)
-        total_running_km["calories"] = total_running_km["calories"].astype(int)
-        total_running_km['start_time'] = (total_running_km['start_time_dec'] / 1000) + 7200  # adjust to ISR time
-        total_running_km['month_year'] = pd.to_datetime(total_running_km['start_time'], unit='s').dt.strftime('%m/%Y')
-        total_running_km = total_running_km.groupby('month_year', as_index=False).sum()
-        total_running_km['duration'] = pd.to_datetime(total_running_km['duration_decimal_ms'] / 1000, unit='s'). \
-            dt.strftime('%H:%M:%S')
-        # TODO plot function and move totals and aves to it.
-        total_duration = decimal_to_time(total_running_km['duration_decimal_ms'].sum())
-        total_cals = total_running_km["calories"].sum()
-        # print(ave_pace, ave_speed, total_cals, total_duration)
-        #
-        return total_running_km[['month_year', 'distance', 'duration_decimal_ms', 'duration', 'calories', 'start_time_dec']]
-
     def plot_yearly_activity(self, year, plot_color='#b7ff30', plot_save_format='jpg', pdf_p=None):
         """
         description: plots the '_num_of_runs' of running activities of a selected distance.
@@ -688,12 +680,12 @@ class runtastic_data_filter(read_runtastic_json.Runtastic_Data_To_Csv):
         :return:             string of file name and path, 'added to pdf', or error if attribute is not in dataframe
         """
         yearly_running_df = self.yearly_activity(year)
-        yearly_running_df['distance'] = yearly_running_df['distance'].astype(float).round(2)
+        yearly_running_df['distance'] = yearly_running_df['distance'].round(2)
         # sum total duration, distance, calories
         total_km = yearly_running_df['distance'].sum()
         if not total_km:
             return f"No running data for year {year}"
-        total_cals = yearly_running_df['calories'].astype(float).sum()
+        total_cals = yearly_running_df['calories'].sum()
         total_duration = decimal_to_time(yearly_running_df['duration_decimal_ms'].astype(float).sum())
         ave_pace = decimal_to_time(yearly_running_df['duration_decimal_ms'].sum() /
                                    (yearly_running_df['distance'].sum()))[3:]  # ms/m == sec/Km
